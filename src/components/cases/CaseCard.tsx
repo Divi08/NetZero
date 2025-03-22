@@ -17,8 +17,13 @@ interface CaseCardProps {
 }
 
 export function CaseCard({ caseData, className }: CaseCardProps) {
+<<<<<<< HEAD
   return (
     <Link to={`/case/${caseData.id}`}>
+=======
+  return (  
+    <Link to={`/case/${caseData.id}`} className="block">
+>>>>>>> 6c63f50 (sign in)
       <div className={cn("case-card group", className)}>
         <div className="inline-block">
           <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
@@ -44,3 +49,7 @@ export function CaseCard({ caseData, className }: CaseCardProps) {
     </Link>
   );
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6c63f50 (sign in)

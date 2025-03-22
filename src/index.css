@@ -5,6 +5,7 @@
 
 @layer base {
   :root {
+<<<<<<< HEAD
     --background: 210 40% 98%;
     --foreground: 222 47% 11%;
 
@@ -46,6 +47,8 @@
   }
 
   .dark {
+=======
+>>>>>>> 6c63f50 (sign in)
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
 
@@ -82,6 +85,11 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 216 34% 17%;
     --sidebar-ring: 224 76% 48%;
+<<<<<<< HEAD
+=======
+
+    --radius: 0.75rem;
+>>>>>>> 6c63f50 (sign in)
   }
 }
 
@@ -111,7 +119,11 @@
   }
 
   .glass-surface {
+<<<<<<< HEAD
     @apply backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border border-white/20 dark:border-slate-700/20 shadow-sm;
+=======
+    @apply backdrop-blur-md bg-slate-900/80 border border-slate-700/20 shadow-sm;
+>>>>>>> 6c63f50 (sign in)
   }
 
   .text-balance {
@@ -162,3 +174,7 @@
     @apply inline-block h-6 w-6 animate-spin rounded-full border-[3px] border-current border-t-transparent;
   }
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6c63f50 (sign in)
