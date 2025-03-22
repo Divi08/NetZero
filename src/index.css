@@ -5,50 +5,6 @@
 
 @layer base {
   :root {
-<<<<<<< HEAD
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-
-    --primary: 210 100% 50%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 222 84% 48%;
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 210 40% 98%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 210 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 92%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 210 100% 50%;
-  }
-
-  .dark {
-=======
->>>>>>> 6c63f50 (sign in)
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
 
@@ -85,11 +41,8 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 216 34% 17%;
     --sidebar-ring: 224 76% 48%;
-<<<<<<< HEAD
-=======
 
     --radius: 0.75rem;
->>>>>>> 6c63f50 (sign in)
   }
 }
 
@@ -119,11 +72,7 @@
   }
 
   .glass-surface {
-<<<<<<< HEAD
-    @apply backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border border-white/20 dark:border-slate-700/20 shadow-sm;
-=======
     @apply backdrop-blur-md bg-slate-900/80 border border-slate-700/20 shadow-sm;
->>>>>>> 6c63f50 (sign in)
   }
 
   .text-balance {
@@ -174,7 +123,4 @@
     @apply inline-block h-6 w-6 animate-spin rounded-full border-[3px] border-current border-t-transparent;
   }
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> 6c63f50 (sign in)

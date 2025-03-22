@@ -3,15 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-<<<<<<< HEAD
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-=======
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
->>>>>>> 6c63f50 (sign in)
 import Index from "./pages/Index";
 import CaseDetail from "./pages/CaseDetail";
 import CreateCase from "./pages/CreateCase";
@@ -19,32 +15,6 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import News from "./pages/News";
 import History from "./pages/History";
-<<<<<<< HEAD
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/case/:id" element={<CaseDetail />} />
-          <Route path="/create-case" element={<CreateCase />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/news" element={<News />} />
-          <Route path="/history" element={<History />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
-
-export default App;
-=======
 import Landing from "./pages/Landing";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
@@ -103,4 +73,3 @@ const App = () => {
 export default App;
 
 
->>>>>>> 6c63f50 (sign in)
