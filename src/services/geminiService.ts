@@ -1,7 +1,20 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ECHOFacility } from './echoService';
 
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
+let genAI: GoogleGenerativeAI | null = null;
+
+export function initializeGemini(apiKey?: string) {
+  const key = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
+  
+  if (!key) {
+    console.error('Gemini API key not provided');
+    return;
+  }
+  genAI = new GoogleGenerativeAI(key);
+}
+
+// Initialize with environment variable by default
+initializeGemini();
 
 export interface GeneratedCase {
   id: string;
@@ -33,6 +46,10 @@ function getViolationDescription(statute: string, status: string): string {
 }
 
 export async function generateCaseFromFacility(facility: ECHOFacility): Promise<GeneratedCase> {
+  if (!genAI) {
+    throw new Error('Gemini API not initialized. Please provide a valid API key.');
+  }
+
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 

@@ -9,62 +9,23 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
     async function loadCases() {
       try {
         setLoading(true);
-        setError(null);
-        
-        // Create loading placeholders
-        setCases(Array(6).fill(null));
-        
         const facilities = await fetchECHOFacilities();
-        
-        if (!mounted) return;
-        
-        if (facilities.length === 0) {
-          setError('No facilities found. Please try again later.');
-          return;
-        }
-
         const generatedCases = await Promise.all(
-          facilities.slice(0, 10).map(async facility => {
-            try {
-              return await generateCaseFromFacility(facility);
-            } catch (err) {
-              console.error('Error generating case for facility:', facility.REGISTRY_ID, err);
-              return null;
-            }
-          })
+          facilities.slice(0, 10).map(facility => generateCaseFromFacility(facility))
         );
-
-        if (!mounted) return;
-
-        // Filter out any null cases from failed generations
-        const validCases = generatedCases.filter((c): c is GeneratedCase => c !== null);
-        
-        if (validCases.length === 0) {
-          setError('Unable to generate cases. Please try again later.');
-          return;
-        }
-
-        setCases(validCases);
+        setCases(generatedCases);
       } catch (err) {
-        console.error('Error loading cases:', err);
         setError('Failed to load cases. Please try again later.');
+        console.error('Error loading cases:', err);
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     }
 
     loadCases();
-
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   return (
@@ -76,20 +37,25 @@ export default function Dashboard() {
         </div>
       </div>
       
+      {loading && (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        </div>
+      )}
+
       {error && (
-        <div className="text-red-500 text-center py-4 bg-red-500/10 rounded-lg">
+        <div className="text-red-500 text-center py-4">
           {error}
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {cases.map((caseData, index) => (
-          <CaseCard 
-            key={caseData?.id || index} 
-            caseData={caseData}
-          />
-        ))}
-      </div>
+      {!loading && !error && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {cases.map((caseData) => (
+            <CaseCard key={caseData.id} caseData={caseData} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

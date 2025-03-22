@@ -1,6 +1,5 @@
-
 import { Sidebar } from "@/components/layout/Sidebar";
-import { CaseList } from "@/components/cases/CaseList";
+import Dashboard from "@/components/Dashboard";
 
 const Index = () => {
   return (
@@ -16,7 +15,7 @@ const Index = () => {
             </p>
           </header>
           
-          <CaseList />
+          <Dashboard />
         </div>
       </main>
     </div>
@@ -24,3 +23,4 @@ const Index = () => {
 };
 
 export default Index;
+
