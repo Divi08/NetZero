@@ -117,7 +117,4 @@ const History = () => {
 };
 
 export default History;
-<<<<<<< HEAD
-=======
 
->>>>>>> 6c63f50 (sign in)
