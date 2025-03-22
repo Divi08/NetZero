@@ -1,57 +1,65 @@
 
+import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
-const newsItems = [
+interface NewsItem {
+  title: string;
+  description: string;
+  source: {
+    name: string;
+  };
+  publishedAt: string;
+  url: string;
+}
+
+// Mock initial news data related to climate change
+const mockNewsData: NewsItem[] = [
   {
-    id: 1,
-    title: "Record Methane Emissions Detected in Permafrost Regions",
-    summary: "Satellite data reveals unprecedented levels of methane release from thawing permafrost, accelerating climate feedback loops.",
-    source: "Climate Science Journal",
-    date: "June 12, 2023",
-    link: "#"
+    title: "Global Carbon Emissions Hit New Record Despite Climate Efforts",
+    description: "Latest research shows global carbon dioxide emissions have reached unprecedented levels, raising concerns about meeting Paris Agreement targets.",
+    source: { name: "Climate Monitor" },
+    publishedAt: new Date().toISOString(),
+    url: "#"
   },
   {
-    id: 2,
-    title: "New Carbon Capture Technology Shows Promising Results",
-    summary: "Breakthrough in direct air capture technology could remove carbon dioxide at significantly lower costs than previous methods.",
-    source: "Tech Climate Review",
-    date: "May 28, 2023",
-    link: "#"
+    title: "New Technology Promises Breakthrough in Carbon Capture",
+    description: "Scientists develop innovative method to capture and store carbon dioxide from industrial emissions with 90% higher efficiency.",
+    source: { name: "Tech & Climate" },
+    publishedAt: new Date().toISOString(),
+    url: "#"
   },
   {
-    id: 3,
-    title: "Global Emissions Reached New High Despite Pandemic Slowdown",
-    summary: "Latest data from the Global Carbon Project shows emissions have rebounded and surpassed pre-pandemic levels.",
-    source: "Environmental Policy Institute",
-    date: "May 15, 2023",
-    link: "#"
+    title: "Arctic Sea Ice Reaches Historic Low",
+    description: "Satellite data reveals Arctic sea ice extent has decreased to lowest level since records began, accelerating global warming concerns.",
+    source: { name: "Environmental Report" },
+    publishedAt: new Date().toISOString(),
+    url: "#"
   },
   {
-    id: 4,
-    title: "Arctic Sea Ice Reaches Second-Lowest Extent on Record",
-    summary: "Scientists warn that the rapidly diminishing sea ice could lead to cascading effects on global weather patterns.",
-    source: "Polar Research Center",
-    date: "April 30, 2023",
-    link: "#"
+    title: "Major Nations Announce New Climate Action Coalition",
+    description: "Leading economies form new alliance to accelerate transition to renewable energy and achieve net-zero emissions by 2050.",
+    source: { name: "Global Policy News" },
+    publishedAt: new Date().toISOString(),
+    url: "#"
   },
   {
-    id: 5,
-    title: "Major Oil Companies Pledge Net-Zero Emissions by 2050",
-    summary: "Industry giants announce ambitious climate goals, but environmental groups question implementation strategies.",
-    source: "Energy Policy Review",
-    date: "April 18, 2023",
-    link: "#"
+    title: "Renewable Energy Costs Drop Below Fossil Fuels",
+    description: "Latest industry analysis shows solar and wind power now cheaper than coal and gas in most major markets worldwide.",
+    source: { name: "Energy Insights" },
+    publishedAt: new Date().toISOString(),
+    url: "#"
   },
   {
-    id: 6,
-    title: "UN Report: Current Climate Pledges Insufficient to Meet Paris Agreement",
-    summary: "Analysis shows current national commitments will lead to 2.7°C warming by 2100, well above the 1.5°C target.",
-    source: "United Nations",
-    date: "April 5, 2023",
-    link: "#"
-  },
+    title: "Climate Change Impacts on Global Agriculture",
+    description: "New study reveals shifting weather patterns are affecting crop yields and food security in key agricultural regions.",
+    source: { name: "Agriculture Today" },
+    publishedAt: new Date().toISOString(),
+    url: "#"
+  }
 ];
 
 const resources = [
@@ -83,6 +91,44 @@ const resources = [
 ];
 
 const News = () => {
+  const [newsItems, setNewsItems] = useState<NewsItem[]>(mockNewsData);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isUsingMockData, setIsUsingMockData] = useState(true);
+
+  const fetchNews = async () => {
+    setIsRefreshing(true);
+    try {
+      const response = await fetch(
+        `https://newsapi.org/v2/everything?` + 
+        new URLSearchParams({
+          q: '(climate change OR global warming OR carbon emissions OR renewable energy)',
+          sortBy: 'publishedAt',
+          language: 'en',
+          apiKey: '9898ff87cec64db28937c5ec569dd09a'
+        })
+      );
+      const data = await response.json();
+      setNewsItems(data.articles.slice(0, 6));
+      setLastUpdated(new Date());
+      setIsUsingMockData(false);
+    } catch (error) {
+      console.error("Error fetching news:", error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   return (
     <div className="flex h-screen w-full bg-background">
       <Sidebar />
@@ -91,33 +137,66 @@ const News = () => {
         <div className="container mx-auto py-8 px-6">
           <header className="mb-8">
             <h1 className="text-3xl font-bold tracking-tight">Climate News</h1>
-            <p className="mt-2 text-muted-foreground">
-              Stay updated with the latest developments in climate science and policy
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-muted-foreground">
+                Stay updated with the latest developments in climate science and policy
+              </p>
+              <div className="text-sm text-muted-foreground text-right">
+                <p>Last updated: {lastUpdated.toLocaleTimeString()}</p>
+                {isUsingMockData && (
+                  <p className="text-xs text-yellow-500">Using sample data. Click refresh for live updates.</p>
+                )}
+              </div>
+            </div>
           </header>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {newsItems.map((item) => (
-              <Card key={item.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
-                  <CardDescription className="text-xs">{item.source} • {item.date}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{item.summary}</p>
-                </CardContent>
-                <CardFooter>
-                  <a 
-                    href={item.link} 
-                    className="text-sm text-primary flex items-center hover:underline"
-                  >
-                    Read more <ExternalLink className="ml-1 h-3 w-3" />
-                  </a>
-                </CardFooter>
-              </Card>
-            ))}
+            {isLoading ? (
+              <p>Loading news...</p>
+            ) : (
+              newsItems.map((item, index) => (
+                <Card key={index} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                    <CardDescription className="text-xs">
+                      {item.source.name} • {formatDate(item.publishedAt)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {item.description}
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <a 
+                      href={item.url}
+                      className="text-sm text-primary flex items-center hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Read more <ExternalLink className="ml-1 h-3 w-3" />
+                    </a>
+                  </CardFooter>
+                </Card>
+              ))
+            )}
           </div>
           
+          <div className="my-12 flex flex-col items-center justify-center space-y-4">
+            <Separator className="w-full" />
+            <Button 
+              onClick={fetchNews}
+              disabled={isRefreshing}
+              variant="outline"
+              size="lg"
+              className="w-[200px]"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Get Live Updates'}
+            </Button>
+            <Separator className="w-full" />
+          </div>
+
           <section className="mt-12">
             <h2 className="text-2xl font-bold mb-6">Climate Research Resources</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -150,3 +229,7 @@ const News = () => {
 };
 
 export default News;
+
+
+
+

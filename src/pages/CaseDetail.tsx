@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 import { 
@@ -14,93 +13,102 @@ import {
   Share2,
   Flag,
   FileText,
-  BarChart
+  BarChart,
+  Loader2
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-
-interface CaseDetails {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  location: string;
-  dateReported: string;
-  status: string;
-  participants: number;
-  urgencyLevel: number;
-  progress: number;
-  evidence: Evidence[];
-  relatedPolicies: Policy[];
-  aiInsights: string[];
-}
-
-interface Evidence {
-  id: string;
-  title: string;
-  type: string;
-  description: string;
-  dateAdded: string;
-  imageUrl?: string;
-}
-
-interface Policy {
-  id: string;
-  title: string;
-  relevance: string;
-  link: string;
-}
+import { fetchECHOFacilities } from '@/services/echoService';
+import { generateCaseFromFacility, GeneratedCase } from '@/services/geminiService';
 
 const CaseDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [detailsCollapsed, setDetailsCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
-  
-  // Mock data - would be fetched from API
-  const caseDetails: CaseDetails = {
-    id: id || "unknown",
-    title: "Methane Leaks in Natural Gas Infrastructure",
-    description: "Satellite imagery has detected anomalous methane emissions in a major natural gas pipeline network. Data shows consistent leakage patterns over the past three months, with emission rates far exceeding regulatory limits.",
-    category: "Greenhouse Gas Emissions",
-    location: "Northern Colorado Gas Basin",
-    dateReported: "May 15, 2023",
-    status: "Active",
-    participants: 12,
-    urgencyLevel: 85,
-    progress: 65,
-    evidence: [
-      {
-        id: "1",
-        title: "Satellite Methane Detection",
-        type: "image",
-        description: "Shows patterns of methane dispersal from pipeline infrastructure",
-        dateAdded: "2023-05-15",
-        imageUrl: "/mock-satellite-image.jpg"
-      },
-      {
-        id: "2",
-        title: "Emissions Data Analysis",
-        type: "document",
-        description: "Quantitative analysis confirms greenhouse gas emission rates",
-        dateAdded: "2023-05-16"
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [caseData, setCaseData] = useState<GeneratedCase | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadCase() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch all facilities and find the matching one
+        const facilities = await fetchECHOFacilities();
+        const facility = facilities.find(f => f.REGISTRY_ID === id);
+
+        if (!facility) {
+          setError('Case not found');
+          return;
+        }
+
+        // Generate case data from the facility
+        const generatedCase = await generateCaseFromFacility(facility);
+        
+        if (mounted) {
+          setCaseData(generatedCase);
+        }
+      } catch (err) {
+        console.error('Error loading case:', err);
+        if (mounted) {
+          setError('Failed to load case details');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    ],
-    relatedPolicies: [
-      {
-        id: "1",
-        title: "EPA Methane Emissions Standards",
-        relevance: "Direct violation of Section 3.2",
-        link: "https://epa.gov/standards"
-      }
-    ],
-    aiInsights: [
-      "Emission patterns suggest systematic infrastructure failure rather than isolated incidents",
-      "Local temperature anomalies correlate strongly with leak locations",
-      "Similar cases in other regions led to successful regulatory action"
-    ]
-  };
+    }
+
+    if (id) {
+      loadCase();
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full bg-background">
+        <Sidebar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+            <p className="text-muted-foreground">Loading case details...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !caseData) {
+    return (
+      <div className="flex h-screen w-full bg-background">
+        <Sidebar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <AlertCircle className="h-8 w-8 text-red-500 mx-auto" />
+            <p className="text-red-500">{error || 'Case not found'}</p>
+            <Button variant="outline" onClick={() => navigate('/')}>
+              Return to Dashboard
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Calculate metrics based on violations
+  const urgencyLevel = caseData.facility.VIOLATIONS.length * 25; // Simple calculation, adjust as needed
+  const progress = 10; // Default starting progress
+  const participants = 1; // Default number of participants
 
   return (
     <div className="flex h-screen w-full bg-background">
@@ -118,7 +126,7 @@ const CaseDetail = () => {
                 </div>
               </Link>
               <div className="w-1 h-1 rounded-full bg-muted-foreground"></div>
-              <span className="text-sm text-muted-foreground">{caseDetails.category}</span>
+              <span className="text-sm text-muted-foreground">{caseData.category}</span>
             </div>
             
             <div className="flex items-center gap-2">
@@ -133,27 +141,29 @@ const CaseDetail = () => {
             </div>
           </div>
           
-          <h1 className="text-2xl font-bold mb-2">{caseDetails.title}</h1>
+          <h1 className="text-2xl font-bold mb-2">{caseData.title}</h1>
           
           {/* Case Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div className="p-3 rounded-lg bg-muted">
               <div className="text-sm font-medium">Urgency Level</div>
-              <Progress value={caseDetails.urgencyLevel} className="mt-2" />
-              <div className="text-xs text-muted-foreground mt-1">High Priority</div>
+              <Progress value={urgencyLevel} className="mt-2" />
+              <div className="text-xs text-muted-foreground mt-1">
+                {urgencyLevel >= 75 ? 'High Priority' : urgencyLevel >= 50 ? 'Medium Priority' : 'Low Priority'}
+              </div>
             </div>
             
             <div className="p-3 rounded-lg bg-muted">
               <div className="text-sm font-medium">Progress</div>
-              <Progress value={caseDetails.progress} className="mt-2" />
-              <div className="text-xs text-muted-foreground mt-1">On Track</div>
+              <Progress value={progress} className="mt-2" />
+              <div className="text-xs text-muted-foreground mt-1">Just Started</div>
             </div>
             
             <div className="p-3 rounded-lg bg-muted">
               <div className="text-sm font-medium">Participants</div>
               <div className="flex items-center gap-2 mt-2">
                 <Users className="h-4 w-4" />
-                <span className="text-lg font-semibold">{caseDetails.participants}</span>
+                <span className="text-lg font-semibold">{participants}</span>
               </div>
             </div>
             
@@ -161,7 +171,7 @@ const CaseDetail = () => {
               <div className="text-sm font-medium">Status</div>
               <div className="flex items-center gap-2 mt-2">
                 <AlertCircle className="h-4 w-4 text-primary" />
-                <span className="font-medium text-primary">{caseDetails.status}</span>
+                <span className="font-medium text-primary">Active</span>
               </div>
             </div>
           </div>
@@ -170,12 +180,12 @@ const CaseDetail = () => {
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4" />
-              <span>{caseDetails.location}</span>
+              <span>{caseData.facility.FAC_CITY}, {caseData.facility.FAC_STATE}</span>
             </div>
             
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              <span>Reported: {caseDetails.dateReported}</span>
+              <span>Last Inspection: {new Date(caseData.facility.DERIVED_LAST_INSPECTION_DATE).toLocaleDateString()}</span>
             </div>
           </div>
         </header>
@@ -186,84 +196,70 @@ const CaseDetail = () => {
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="w-full justify-start px-4 border-b">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="evidence">Evidence</TabsTrigger>
-                <TabsTrigger value="policies">Related Policies</TabsTrigger>
+                <TabsTrigger value="violations">Violations</TabsTrigger>
+                <TabsTrigger value="facility">Facility Info</TabsTrigger>
                 <TabsTrigger value="analysis">AI Analysis</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview" className="p-6">
                 <p className="text-sm text-card-foreground/80 leading-relaxed">
-                  {caseDetails.description}
+                  {caseData.summary}
                 </p>
-                
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-3">Key Findings</h3>
-                  <div className="space-y-4">
-                    {caseDetails.aiInsights.map((insight, index) => (
-                      <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted">
-                        <BarChart className="h-5 w-5 text-primary mt-0.5" />
-                        <p className="text-sm">{insight}</p>
-                      </div>
-                    ))}
+              </TabsContent>
+              
+              <TabsContent value="violations" className="p-6">
+                <div className="space-y-4">
+                  {caseData.facility.VIOLATIONS.map((violation, index) => (
+                    <div key={index} className="rounded-lg border bg-card p-4 shadow-sm">
+                      <h4 className="font-medium mb-2">{violation.STATUTE} Violation</h4>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Type: {violation.VIOLATION_TYPE_CODE}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Date: {new Date(violation.VIOLATION_DATE).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="facility" className="p-6">
+                <div className="space-y-4">
+                  <div className="rounded-lg border bg-card p-4 shadow-sm">
+                    <h4 className="font-medium mb-4">Facility Information</h4>
+                    <div className="space-y-2">
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Name:</span> {caseData.facility.FAC_NAME}
+                      </p>
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Location:</span> {caseData.facility.FAC_CITY}, {caseData.facility.FAC_STATE} {caseData.facility.FAC_ZIP}
+                      </p>
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Status:</span> {caseData.facility.FAC_ACTIVE_FLAG === 'Y' ? 'Active' : 'Inactive'}
+                      </p>
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Registry ID:</span> {caseData.facility.REGISTRY_ID}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </TabsContent>
               
-              <TabsContent value="evidence" className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {caseDetails.evidence.map((item) => (
-                    <div key={item.id} className="rounded-lg border bg-card p-4 shadow-sm">
-                      <h4 className="font-medium mb-2">{item.title}</h4>
-                      {item.imageUrl ? (
-                        <div className="aspect-video bg-slate-200 dark:bg-slate-800 rounded-md flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">{item.type}</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 text-primary">
-                          <FileText className="h-4 w-4" />
-                          <span className="text-sm">View Document</span>
-                        </div>
-                      )}
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        {item.description}
-                      </p>
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        Added: {item.dateAdded}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="policies" className="p-6">
-                <div className="space-y-4">
-                  {caseDetails.relatedPolicies.map((policy) => (
-                    <div key={policy.id} className="rounded-lg border bg-card p-4 shadow-sm">
-                      <h4 className="font-medium mb-2">{policy.title}</h4>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Relevance: {policy.relevance}
-                      </p>
-                      <a 
-                        href={policy.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline"
-                      >
-                        View Policy Document
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-              
               <TabsContent value="analysis" className="p-6">
-                {/* AI Analysis content */}
+                <div className="space-y-4">
+                  <div className="rounded-lg border bg-card p-4 shadow-sm">
+                    <h4 className="font-medium mb-4">AI Analysis</h4>
+                    <p className="text-sm text-card-foreground/80 leading-relaxed">
+                      Based on the facility's violation history and compliance status, this case represents a significant environmental concern that requires attention.
+                    </p>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
           
           <div className="overflow-hidden flex flex-col">
-            <ChatInterface caseId={caseDetails.id} />
+            <ChatInterface caseId={caseData.id} />
           </div>
         </div>
       </main>
