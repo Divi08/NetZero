@@ -7,7 +7,7 @@ import { UserProvider, useUser } from "@/contexts/UserContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import Index from "./pages/Index";
-import CaseDetail from "./pages/CaseDetail";
+import { CaseDetail } from "./pages/CaseDetail";
 import CreateCase from "./pages/CreateCase";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -22,6 +22,7 @@ import Friends from "./pages/Friends";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import Chat from "./pages/Chat";
+import Badges from "./pages/Badges";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,7 @@ const AppRoutes = () => {
       <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
       <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
       <Route path="/chat/:chatId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+      <Route path="/badges" element={<ProtectedRoute><Badges /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

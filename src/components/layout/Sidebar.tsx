@@ -11,7 +11,8 @@ import {
   Newspaper,
   Users,
   UserCircle,
-  MessageSquare
+  MessageSquare,
+  Award
 } from 'lucide-react';
 
 // Type definition for menu items
@@ -48,6 +49,11 @@ const menuItems: MenuItemType[] = [
     label: 'History',
     path: '/history',
     icon: History
+  },
+  {
+    label: 'Badges',
+    path: '/badges',
+    icon: Award
   },
   {
     label: 'News',

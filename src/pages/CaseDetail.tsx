@@ -1,12 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import { ArrowLeft, Calendar, UserPlus, CheckCircle2 } from 'lucide-react';
 import { fetchCaseById, PolicyCase, hardcodedCases } from '@/services/caseService';
 import { trackCaseVisit } from '@/services/historyService';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { CommunityChat } from '@/components/case/CommunityChat';
 import { useCaseCommunityMessages } from '@/services/caseService';
+import { hasUserJoinedCase, updateCaseJoinedStats } from '@/services/badgeService';
+import { Spinner } from '@/components/ui/spinner';
+import { toast } from 'sonner';
+import { Timestamp } from 'firebase/firestore';
+
+// Add interface for community message
+interface CommunityMessage {
+  id: string;
+  content: string;
+  userId: string;
+  userName: string;
+  userPhotoURL?: string | null;
+  timestamp: Timestamp;
+  isBot?: boolean;
+}
 
 export function CaseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +29,8 @@ export function CaseDetail() {
   const [caseData, setCaseData] = useState<PolicyCase | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasJoined, setHasJoined] = useState<boolean>(false);
+  const [isJoining, setIsJoining] = useState<boolean>(false);
   const { data: communityMessages = [] } = useCaseCommunityMessages(id || '');
 
   useEffect(() => {
@@ -77,7 +94,39 @@ export function CaseDetail() {
     }
   }, [id, caseData, isLoading]);
 
+  // Check if user has joined this case
+  useEffect(() => {
+    async function checkJoinStatus() {
+      if (id) {
+        try {
+          const joined = await hasUserJoinedCase(id);
+          setHasJoined(joined);
+        } catch (err) {
+          console.error("Error checking join status:", err);
+        }
+      }
+    }
+
+    checkJoinStatus();
+  }, [id]);
+
   const goBack = () => navigate(-1);
+
+  const handleJoinCase = async () => {
+    if (!id) return;
+    
+    setIsJoining(true);
+    try {
+      await updateCaseJoinedStats(id);
+      setHasJoined(true);
+      toast.success("You've joined this case!");
+    } catch (err) {
+      console.error("Error joining case:", err);
+      toast.error("Failed to join case. Please try again.");
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -137,6 +186,23 @@ export function CaseDetail() {
             {caseData.summary || 'No summary available for this case.'}
           </p>
         </div>
+        
+        {/* Join Case Button */}
+        {!hasJoined ? (
+          <Button 
+            onClick={handleJoinCase} 
+            className="flex items-center gap-2"
+            disabled={isJoining}
+          >
+            {isJoining ? <Spinner size="sm" className="mr-2" /> : <UserPlus className="h-4 w-4" />}
+            Join Case
+          </Button>
+        ) : (
+          <Button variant="outline" className="flex items-center gap-2" disabled>
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            Joined
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="analysis" className="w-full">
@@ -168,7 +234,55 @@ export function CaseDetail() {
         </TabsContent>
         
         <TabsContent value="community" className="mt-0">
-          <CommunityChat caseId={id || ''} />
+          {!hasJoined ? (
+            <div className="border rounded-lg p-8 bg-card flex flex-col items-center justify-center text-center">
+              <UserPlus className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Join to participate in the discussion</h3>
+              <p className="text-muted-foreground mb-6 max-w-md">
+                You need to join this case to actively participate in the community discussion.
+                Join to share your insights and collaborate with others.
+              </p>
+              <Button onClick={handleJoinCase} disabled={isJoining}>
+                {isJoining ? <Spinner size="sm" className="mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
+                Join Case
+              </Button>
+              
+              {communityMessages.length > 0 && (
+                <div className="mt-8 border-t pt-8 w-full">
+                  <h4 className="text-lg font-medium mb-4">Current Discussion</h4>
+                  <div className="space-y-4 opacity-75">
+                    {communityMessages.map((msg: any, index: number) => {
+                      // Only show first 5 messages
+                      if (index >= 5) return null;
+                      return (
+                        <div key={msg.id} className="p-3 border rounded-lg bg-background/50">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="bg-primary/20 text-primary h-8 w-8 rounded-full flex items-center justify-center font-semibold text-sm">
+                              {msg.userName ? msg.userName.substring(0, 1) : '?'}
+                            </div>
+                            <span className="font-medium">{msg.userName || 'Anonymous'}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {msg.timestamp && msg.timestamp.toDate ? 
+                                new Date(msg.timestamp.toDate()).toLocaleString() : 
+                                'Unknown time'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{msg.content}</p>
+                        </div>
+                      );
+                    })}
+                    {communityMessages.length > 5 && (
+                      <p className="text-center text-sm text-muted-foreground">
+                        {communityMessages.length - 5} more messages in this discussion...
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <CommunityChat caseId={id || ''} />
+          )}
         </TabsContent>
       </Tabs>
     </div>
