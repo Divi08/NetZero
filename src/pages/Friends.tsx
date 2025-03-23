@@ -1,184 +1,454 @@
 import React, { useState, useEffect } from 'react';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import UserSearch from '@/components/users/UserSearch';
+import { 
+  sendFriendRequest, 
+  getIncomingFriendRequests, 
+  getOutgoingFriendRequests,
+  acceptFriendRequest,
+  rejectFriendRequest,
+  cancelFriendRequest,
+  getFriends,
+  removeFriend,
+  searchUsersByName
+} from '@/services/friendService';
+import { UserProfile } from '@/contexts/UserContext';
 import { useUser } from '@/contexts/UserContext';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useChat } from '@/contexts/ChatContext';
+import { FriendRequest, Friend } from '@/models/types';
+import { toast } from 'sonner';
+import { Search, Check, X, UserPlus, UserMinus, UserRoundCheck, Clock, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { User, MessageCircle, Clock, X, Check, UserX } from 'lucide-react';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-
-type FriendRequest = {
-  id: string;
-  from: {
-    uid: string;
-    username: string;
-    displayName: string;
-    photoURL: string | null;
-  };
-  status: 'pending' | 'accepted' | 'rejected';
-  createdAt: Date;
-};
+import { Input } from '@/components/ui/input';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from '@/components/ui/spinner';
+import { Sidebar } from '@/components/layout/Sidebar';
 
 export default function Friends() {
-  const { user } = useUser();
-  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
-  const [friends, setFriends] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<FriendRequest[]>([]);
+  const [loading, setLoading] = useState({
+    friends: false,
+    incoming: false,
+    outgoing: false,
+    search: false,
+    action: false
+  });
+  
+  // Add state for tracking individual button loading states
+  const [loadingButtons, setLoadingButtons] = useState<{[key: string]: boolean}>({});
 
-  // Fetch friend requests and friends (placeholder, real implementation would use Firestore)
+  const { user } = useUser();
+  const { startNewChat } = useChat();
+
   useEffect(() => {
-    const fetchFriendsData = async () => {
-      if (!user) return;
-      
-      // This is just a placeholder - in a real app you would fetch from Firestore
-      setFriendRequests([]);
-      setFriends([]);
-      setIsLoading(false);
-    };
+    loadFriends();
+    loadFriendRequests();
+  }, []);
+
+  const loadFriends = async () => {
+    try {
+      setLoading(prev => ({ ...prev, friends: true }));
+      const friendsList = await getFriends();
+      setFriends(friendsList);
+    } catch (error) {
+      toast.error('Failed to load friends');
+      console.error('Error loading friends:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, friends: false }));
+    }
+  };
+
+  const loadFriendRequests = async () => {
+    try {
+      setLoading(prev => ({ ...prev, incoming: true, outgoing: true }));
+      const [incoming, outgoing] = await Promise.all([
+        getIncomingFriendRequests(),
+        getOutgoingFriendRequests()
+      ]);
+      setIncomingRequests(incoming);
+      setOutgoingRequests(outgoing);
+    } catch (error) {
+      toast.error('Failed to load friend requests');
+      console.error('Error loading friend requests:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, incoming: false, outgoing: false }));
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      return;
+    }
     
-    fetchFriendsData();
-  }, [user]);
+    try {
+      setLoading(prev => ({ ...prev, search: true }));
+      const results = await searchUsersByName(searchTerm);
+      setSearchResults(results);
+    } catch (error) {
+      toast.error('Failed to search for users');
+      console.error('Error searching for users:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, search: false }));
+    }
+  };
+
+  const handleSendRequest = async (userId: string, userName: string) => {
+    try {
+      setLoadingButtons(prev => ({ ...prev, [`send-${userId}`]: true }));
+      await sendFriendRequest(userId, userName);
+      toast.success('Friend request sent');
+      // Update outgoing requests list
+      loadFriendRequests();
+      // Remove from search results
+      setSearchResults(prev => prev.filter(user => user.uid !== userId));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to send friend request');
+      console.error('Error sending friend request:', error);
+    } finally {
+      setLoadingButtons(prev => ({ ...prev, [`send-${userId}`]: false }));
+    }
+  };
+
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      // Set loading state for this specific button
+      setLoadingButtons(prev => ({ ...prev, [`accept-${requestId}`]: true }));
+      await acceptFriendRequest(requestId);
+      toast.success('Friend request accepted');
+      // Update lists
+      loadFriends();
+      loadFriendRequests();
+    } catch (error) {
+      toast.error('Failed to accept friend request');
+      console.error('Error accepting friend request:', error);
+    } finally {
+      setLoadingButtons(prev => ({ ...prev, [`accept-${requestId}`]: false }));
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      setLoadingButtons(prev => ({ ...prev, [`reject-${requestId}`]: true }));
+      await rejectFriendRequest(requestId);
+      toast.success('Friend request rejected');
+      // Update incoming requests list
+      loadFriendRequests();
+    } catch (error) {
+      toast.error('Failed to reject friend request');
+      console.error('Error rejecting friend request:', error);
+    } finally {
+      setLoadingButtons(prev => ({ ...prev, [`reject-${requestId}`]: false }));
+    }
+  };
+
+  const handleCancelRequest = async (requestId: string) => {
+    try {
+      setLoadingButtons(prev => ({ ...prev, [`cancel-${requestId}`]: true }));
+      await cancelFriendRequest(requestId);
+      toast.success('Friend request cancelled');
+      // Update outgoing requests list
+      loadFriendRequests();
+    } catch (error) {
+      toast.error('Failed to cancel friend request');
+      console.error('Error cancelling friend request:', error);
+    } finally {
+      setLoadingButtons(prev => ({ ...prev, [`cancel-${requestId}`]: false }));
+    }
+  };
+
+  const handleRemoveFriend = async (friendId: string) => {
+    try {
+      setLoadingButtons(prev => ({ ...prev, [`remove-${friendId}`]: true }));
+      await removeFriend(friendId);
+      toast.success('Friend removed');
+      // Update friends list
+      loadFriends();
+    } catch (error) {
+      toast.error('Failed to remove friend');
+      console.error('Error removing friend:', error);
+    } finally {
+      setLoadingButtons(prev => ({ ...prev, [`remove-${friendId}`]: false }));
+    }
+  };
+
+  const handleMessageFriend = async (friendId: string) => {
+    try {
+      setLoadingButtons(prev => ({ ...prev, [`message-${friendId}`]: true }));
+      // Start a new chat or navigate to existing chat with this friend
+      await startNewChat(friendId);
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      toast.error('Could not open chat. Please try again.');
+    } finally {
+      setLoadingButtons(prev => ({ ...prev, [`message-${friendId}`]: false }));
+    }
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return '';
+    return name.split(' ')
+      .map(part => part.charAt(0))
+      .join('')
+      .toUpperCase();
+  };
 
   return (
     <div className="flex h-screen w-full bg-background">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-100">Friends & Connections</h1>
-            <p className="text-slate-400">Find and connect with other users</p>
-          </div>
+        <div className="container mx-auto py-6">
+          <h1 className="text-3xl font-bold mb-6">Friends</h1>
           
-          <Tabs defaultValue="search" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="search">
-                <User className="h-4 w-4 mr-2" />
-                Search Users
-              </TabsTrigger>
-              <TabsTrigger value="requests">
-                <Clock className="h-4 w-4 mr-2" />
-                Friend Requests
-                {friendRequests.length > 0 && (
-                  <span className="ml-2 bg-blue-600 text-white text-xs py-0.5 px-2 rounded-full">
-                    {friendRequests.length}
-                  </span>
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Find Friends</CardTitle>
+              <CardDescription>Search for users to add them as friends</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Search by name or username"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="flex-1"
+                />
+                <Button onClick={handleSearch} disabled={loading.search}>
+                  {loading.search ? <Spinner size="sm" /> : <Search size={18} />}
+                  <span className="ml-2">Search</span>
+                </Button>
+              </div>
+
+              {searchResults.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="font-medium mb-2">Search Results</h3>
+                  <ScrollArea className="h-[200px]">
+                    <div className="space-y-2">
+                      {searchResults.map((user) => (
+                        <div key={user.uid} className="flex items-center justify-between p-2 border rounded-md">
+                          <div className="flex items-center gap-2">
+                            <Avatar>
+                              <AvatarImage src={user.photoURL} />
+                              <AvatarFallback>{getInitials(`${user.firstName} ${user.lastName}`)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{user.firstName} {user.lastName}</p>
+                              <p className="text-sm text-muted-foreground">@{user.username}</p>
+                            </div>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleSendRequest(user.uid, `${user.firstName} ${user.lastName}`)}
+                            disabled={loadingButtons[`send-${user.uid}`]}
+                          >
+                            {loadingButtons[`send-${user.uid}`] ? <Spinner size="sm" /> : <UserPlus size={16} className="mr-1" />}
+                            Add Friend
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Tabs defaultValue="friends">
+            <TabsList className="mb-4">
+              <TabsTrigger value="friends">
+                Friends
+                {friends.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">{friends.length}</Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="friends">
-                <User className="h-4 w-4 mr-2" />
-                My Friends
-                {friends.length > 0 && (
-                  <span className="ml-2 bg-slate-700 text-slate-300 text-xs py-0.5 px-2 rounded-full">
-                    {friends.length}
-                  </span>
+              <TabsTrigger value="incoming">
+                Incoming Requests
+                {incomingRequests.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">{incomingRequests.length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="outgoing">
+                Outgoing Requests
+                {outgoingRequests.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">{outgoingRequests.length}</Badge>
                 )}
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="search">
-              <UserSearch />
+            <TabsContent value="friends">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Friends</CardTitle>
+                  <CardDescription>People you've connected with</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loading.friends ? (
+                    <div className="flex justify-center py-8">
+                      <Spinner />
+                    </div>
+                  ) : friends.length > 0 ? (
+                    <div className="space-y-2">
+                      {friends.map((friend) => (
+                        <div key={friend.id} className="flex items-center justify-between p-2 border rounded-md">
+                          <div className="flex items-center gap-2">
+                            <Avatar>
+                              <AvatarImage src={friend.friendPhotoURL} />
+                              <AvatarFallback>{getInitials(friend.friendName)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{friend.friendName}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleMessageFriend(friend.friendId)}
+                              disabled={loadingButtons[`message-${friend.friendId}`]}
+                            >
+                              {loadingButtons[`message-${friend.friendId}`] ? <Spinner size="sm" /> : <Mail size={16} className="mr-1" />}
+                              Message
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleRemoveFriend(friend.friendId)}
+                              disabled={loadingButtons[`remove-${friend.friendId}`]}
+                            >
+                              {loadingButtons[`remove-${friend.friendId}`] ? <Spinner size="sm" /> : <UserMinus size={16} className="mr-1" />}
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>You don't have any friends yet.</p>
+                      <p>Search for people to connect with!</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
             
-            <TabsContent value="requests">
-              <div className="p-4">
-                <h2 className="text-xl font-bold text-slate-100 mb-4">Friend Requests</h2>
-                
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <LoadingSpinner className="h-8 w-8 mx-auto" />
-                    <p className="mt-2 text-sm text-slate-400">Loading friend requests...</p>
+            <TabsContent value="incoming">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Incoming Friend Requests</CardTitle>
+                  <CardDescription>People who want to connect with you</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loading.incoming ? (
+                    <div className="flex justify-center py-8">
+                      <Spinner />
                   </div>
-                ) : friendRequests.length > 0 ? (
-                  <div className="space-y-4">
-                    {friendRequests.map((request) => (
-                      <Card key={request.id} className="bg-slate-800/50 border-slate-700/50">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <Avatar className="h-10 w-10">
-                                <AvatarImage src={request.from.photoURL || undefined} alt={request.from.username} />
-                                <AvatarFallback className="bg-blue-600 text-white">
-                                  {request.from.displayName.substring(0, 2).toUpperCase()}
-                                </AvatarFallback>
+                  ) : incomingRequests.length > 0 ? (
+                    <div className="space-y-2">
+                      {incomingRequests.map((request) => (
+                        <div key={request.id} className="flex items-center justify-between p-2 border rounded-md">
+                          <div className="flex items-center gap-2">
+                            <Avatar>
+                              <AvatarImage src={request.senderPhotoURL} />
+                              <AvatarFallback>{getInitials(request.senderName)}</AvatarFallback>
                               </Avatar>
                               <div>
-                                <h3 className="font-medium text-slate-100">{request.from.username}</h3>
-                                <p className="text-sm text-slate-400">{request.from.displayName}</p>
-                              </div>
+                              <p className="font-medium">{request.senderName}</p>
                             </div>
-                            <div className="flex space-x-2">
-                              <Button variant="outline" size="sm">
-                                <Check className="h-4 w-4 mr-2" />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleAcceptRequest(request.id)}
+                              disabled={loadingButtons[`accept-${request.id}`] || loadingButtons[`reject-${request.id}`]}
+                            >
+                              {loadingButtons[`accept-${request.id}`] ? <Spinner size="sm" /> : <Check size={16} className="mr-1" />}
                                 Accept
                               </Button>
-                              <Button variant="ghost" size="sm">
-                                <X className="h-4 w-4 mr-2" />
-                                Decline
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleRejectRequest(request.id)}
+                              disabled={loadingButtons[`accept-${request.id}`] || loadingButtons[`reject-${request.id}`]}
+                            >
+                              {loadingButtons[`reject-${request.id}`] ? <Spinner size="sm" /> : <X size={16} className="mr-1" />}
+                              Reject
                               </Button>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <p className="text-slate-400">No friend requests at the moment.</p>
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No pending friend requests.</p>
                   </div>
                 )}
-              </div>
+                </CardContent>
+              </Card>
             </TabsContent>
             
-            <TabsContent value="friends">
-              <div className="p-4">
-                <h2 className="text-xl font-bold text-slate-100 mb-4">My Friends</h2>
-                
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <LoadingSpinner className="h-8 w-8 mx-auto" />
-                    <p className="mt-2 text-sm text-slate-400">Loading friends...</p>
+            <TabsContent value="outgoing">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Outgoing Friend Requests</CardTitle>
+                  <CardDescription>People you've invited to connect</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loading.outgoing ? (
+                    <div className="flex justify-center py-8">
+                      <Spinner />
                   </div>
-                ) : friends.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {friends.map((friend) => (
-                      <Card key={friend.uid} className="bg-slate-800/50 border-slate-700/50">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <Avatar className="h-10 w-10">
-                                <AvatarImage src={friend.photoURL || undefined} alt={friend.username} />
-                                <AvatarFallback className="bg-blue-600 text-white">
-                                  {friend.displayName.substring(0, 2).toUpperCase()}
-                                </AvatarFallback>
+                  ) : outgoingRequests.length > 0 ? (
+                    <div className="space-y-2">
+                      {outgoingRequests.map((request) => (
+                        <div key={request.id} className="flex items-center justify-between p-2 border rounded-md">
+                          <div className="flex items-center gap-2">
+                            <Avatar>
+                              <AvatarFallback>{getInitials(request.receiverName)}</AvatarFallback>
                               </Avatar>
                               <div>
-                                <h3 className="font-medium text-slate-100">{friend.username}</h3>
-                                <p className="text-sm text-slate-400">{friend.displayName}</p>
+                              <p className="font-medium">{request.receiverName}</p>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <Clock size={14} className="mr-1" />
+                                <span>Pending</span>
                               </div>
                             </div>
-                            <div className="flex space-x-2">
-                              <Button variant="outline" size="icon">
-                                <MessageCircle className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon">
-                                <UserX className="h-4 w-4 text-red-400" />
-                              </Button>
-                            </div>
                           </div>
-                        </CardContent>
-                      </Card>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleCancelRequest(request.id)}
+                            disabled={loadingButtons[`cancel-${request.id}`]}
+                            className="ml-2"
+                          >
+                            {loadingButtons[`cancel-${request.id}`] ? <Spinner size="sm" /> : <X size={16} className="mr-1" />}
+                            Cancel
+                          </Button>
+                        </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <p className="text-slate-400">You don't have any friends yet. Start by searching for users.</p>
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No outgoing friend requests.</p>
                   </div>
                 )}
-              </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>

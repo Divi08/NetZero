@@ -20,6 +20,7 @@ import Cases from "@/pages/Cases";
 import Dashboard from "./pages/Dashboard";
 import Friends from "./pages/Friends";
 import Profile from "./pages/Profile";
+import ProfileEdit from "./pages/ProfileEdit";
 import Chat from "./pages/Chat";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,7 @@ const AppRoutes = () => {
       <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
       <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
       <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
       <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
       <Route path="/chat/:chatId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />

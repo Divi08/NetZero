@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Calendar, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PolicyCase as ServicePolicyCase } from "@/services/caseService";
 
 interface PolicyCase {
   id: string;
@@ -17,11 +18,11 @@ interface PolicyCase {
   endDate: string;
   impact: boolean;
   objectives: string;
-  aiAnalysis: string;
+  aiAnalysis?: string;
 }
 
 interface CaseCardProps {
-  caseData?: PolicyCase;
+  caseData?: PolicyCase | ServicePolicyCase;
   className?: string;
 }
 

@@ -1,78 +1,81 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { 
-  ChevronDown, 
-  ChevronRight, 
-  LayoutGrid, 
-  History, 
-  Settings, 
-  LogOut, 
-  Plus, 
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import {
+  Home,
+  File,
+  Settings,
+  ChevronRight,
+  ChevronDown,
+  History,
   Newspaper,
-  MessageSquare,
-  Users
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  Users,
+  UserCircle,
+  MessageSquare
+} from 'lucide-react';
 
+// Type definition for menu items
 type MenuItemType = {
-  icon: React.ElementType;
   label: string;
   path: string;
+  icon: React.ElementType;
   submenu?: MenuItemType[];
 };
 
+// Define menu items
 const menuItems: MenuItemType[] = [
   {
-    icon: LayoutGrid,
-    label: "Menu",
-    path: "#",
-    submenu: [
-      {
-        icon: LayoutGrid,
-        label: "Cases",
-        path: "/cases",
-      },
-      {
-        icon: Newspaper,
-        label: "News",
-        path: "/news",
-      },
-      {
-        icon: History,
-        label: "History",
-        path: "/history",
-      },
-      {
-        icon: MessageSquare,
-        label: "Chat",
-        path: "/chat",
-      },
-      {
-        icon: Users,
-        label: "Friends",
-        path: "/friends",
-      },
-    ],
+    label: 'Dashboard',
+    path: '/dashboard',
+    icon: Home
   },
+  {
+    label: 'Cases',
+    path: '/cases',
+    icon: File
+  },
+  {
+    label: 'Chat',
+    path: '/chat',
+    icon: MessageSquare
+  },
+  {
+    label: 'Friends',
+    path: '/friends',
+    icon: Users
+  },
+  {
+    label: 'History',
+    path: '/history',
+    icon: History
+  },
+  {
+    label: 'News',
+    path: '/news',
+    icon: Newspaper
+  }
 ];
 
+// Bottom menu items
 const bottomItems: MenuItemType[] = [
   {
-    icon: Plus,
-    label: "Create Case",
-    path: "/create-case",
+    label: 'Profile',
+    path: '/profile/edit',
+    icon: UserCircle
   },
   {
-    icon: Settings,
-    label: "Settings",
-    path: "/settings",
-  },
-  {
-    icon: LogOut,
-    label: "Sign Out",
-    path: "#",
-  },
+    label: 'Settings',
+    path: '/settings',
+    icon: Settings
+  }
 ];
+
+// Utility styles
+const menuButtonStyles = {
+  base: 'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all hover:bg-sidebar-hover',
+  active: 'bg-sidebar-hover text-sidebar-foreground-active',
+  inactive: 'text-sidebar-foreground'
+};
 
 export function Sidebar() {
   const location = useLocation();

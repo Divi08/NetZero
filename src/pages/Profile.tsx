@@ -6,11 +6,12 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, MessageCircle, Mail, Briefcase, MapPin, Calendar } from 'lucide-react';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ArrowLeft, MessageCircle, Mail, Briefcase, MapPin, Calendar, Edit, UserPlus } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useUser, UserProfile } from '@/contexts/UserContext';
 import { useChat } from '@/contexts/ChatContext';
 import { toast } from 'sonner';
+import { sendFriendRequest, checkIsFriend } from '@/services/friendService';
 
 export default function Profile() {
   const { username } = useParams<{ username: string }>();
@@ -20,6 +21,9 @@ export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFriend, setIsFriend] = useState(false);
+  const [isCheckingFriend, setIsCheckingFriend] = useState(false);
+  const [isSendingRequest, setIsSendingRequest] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -44,8 +48,17 @@ export default function Profile() {
         
         const userDoc = querySnapshot.docs[0];
         const userData = userDoc.data() as UserProfile;
+        userData.uid = userDoc.id; // Ensure the uid is set from doc id
         
         setProfile(userData);
+        
+        // Check if this user is a friend (only if it's not the current user's profile)
+        if (currentUser && currentUser.uid !== userData.uid) {
+          setIsCheckingFriend(true);
+          const friendStatus = await checkIsFriend(userData.uid);
+          setIsFriend(friendStatus);
+          setIsCheckingFriend(false);
+        }
       } catch (error) {
         console.error('Error fetching user profile:', error);
         setError('Failed to load user profile');
@@ -55,7 +68,7 @@ export default function Profile() {
     };
     
     fetchUserProfile();
-  }, [username]);
+  }, [username, currentUser]);
 
   const handleSendMessage = async () => {
     if (profile) {
@@ -69,6 +82,25 @@ export default function Profile() {
       }
     }
   };
+  
+  const handleSendFriendRequest = async () => {
+    if (!profile) return;
+    
+    try {
+      setIsSendingRequest(true);
+      await sendFriendRequest(profile.uid, `${profile.firstName} ${profile.lastName}`.trim());
+      toast.success('Friend request sent');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to send friend request');
+      console.error('Error sending friend request:', error);
+    } finally {
+      setIsSendingRequest(false);
+    }
+  };
+  
+  const handleEditProfile = () => {
+    navigate('/profile/edit');
+  };
 
   if (isLoading) {
     return (
@@ -76,7 +108,7 @@ export default function Profile() {
         <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
-            <LoadingSpinner className="h-8 w-8 mx-auto" />
+            <Spinner size="lg" />
             <p className="text-muted-foreground">Loading profile...</p>
           </div>
         </main>
@@ -101,6 +133,8 @@ export default function Profile() {
     );
   }
 
+  const isOwnProfile = currentUser?.uid === profile.uid;
+
   return (
     <div className="flex h-screen w-full bg-background">
       <Sidebar />
@@ -108,7 +142,7 @@ export default function Profile() {
         <div className="container mx-auto p-6">
           <button 
             onClick={() => navigate(-1)}
-            className="flex items-center text-sm text-slate-400 hover:text-slate-200 mb-6"
+            className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-6"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
@@ -117,58 +151,84 @@ export default function Profile() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Left column - User info */}
             <div className="space-y-6">
-              <Card className="bg-slate-800/50 border-slate-700/50">
+              <Card>
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center">
                     <Avatar className="h-24 w-24">
-                      <AvatarImage src={profile.photoURL || undefined} alt={profile.usernameDisplay} />
-                      <AvatarFallback className="bg-blue-600 text-white text-2xl">
-                        {profile.firstName[0]}{profile.lastName[0]}
+                      <AvatarImage src={profile.photoURL || undefined} alt={profile.username} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                        {profile.firstName?.[0]}{profile.lastName?.[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <h1 className="mt-4 text-2xl font-bold text-slate-100">{profile.usernameDisplay}</h1>
-                    <p className="text-slate-400">{`${profile.firstName} ${profile.lastName}`}</p>
+                    <h1 className="mt-4 text-2xl font-bold">{profile.username}</h1>
+                    <p className="text-muted-foreground">{`${profile.firstName} ${profile.lastName}`}</p>
                     
                     <div className="mt-6 flex gap-3">
-                      {currentUser?.uid !== profile.uid && (
+                      {isOwnProfile ? (
                         <Button 
-                          className="w-full" 
-                          onClick={handleSendMessage}
+                          onClick={handleEditProfile}
+                          className="w-full"
                         >
-                          <MessageCircle className="mr-2 h-4 w-4" />
-                          Message
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Profile
                         </Button>
+                      ) : (
+                        <>
+                          <Button 
+                            className="w-full" 
+                            onClick={handleSendMessage}
+                          >
+                            <MessageCircle className="mr-2 h-4 w-4" />
+                            Message
+                          </Button>
+                          
+                          {!isFriend && (
+                            <Button 
+                              variant="outline" 
+                              className="w-full"
+                              onClick={handleSendFriendRequest}
+                              disabled={isSendingRequest || isCheckingFriend}
+                            >
+                              {isSendingRequest ? (
+                                <Spinner size="sm" className="mr-2" />
+                              ) : (
+                                <UserPlus className="mr-2 h-4 w-4" />
+                              )}
+                              Add Friend
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-slate-800/50 border-slate-700/50">
+              <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">About</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-start">
-                    <Mail className="h-5 w-5 text-slate-400 mr-3 mt-0.5" />
+                    <Mail className="h-5 w-5 text-muted-foreground mr-3 mt-0.5" />
                     <div>
-                      <div className="text-sm text-slate-400">Email</div>
+                      <div className="text-sm text-muted-foreground">Email</div>
                       <div>{profile.email}</div>
                     </div>
                   </div>
                   
                   <div className="flex items-start">
-                    <Briefcase className="h-5 w-5 text-slate-400 mr-3 mt-0.5" />
+                    <Briefcase className="h-5 w-5 text-muted-foreground mr-3 mt-0.5" />
                     <div>
-                      <div className="text-sm text-slate-400">Education</div>
+                      <div className="text-sm text-muted-foreground">Education</div>
                       <div>{profile.education || 'Not specified'}</div>
                     </div>
                   </div>
                   
                   <div className="flex items-start">
-                    <Calendar className="h-5 w-5 text-slate-400 mr-3 mt-0.5" />
+                    <Calendar className="h-5 w-5 text-muted-foreground mr-3 mt-0.5" />
                     <div>
-                      <div className="text-sm text-slate-400">Joined</div>
+                      <div className="text-sm text-muted-foreground">Joined</div>
                       <div>
                         {profile.createdAt instanceof Date
                           ? profile.createdAt.toLocaleDateString()
@@ -181,16 +241,16 @@ export default function Profile() {
             </div>
             
             {/* Right column - Bio and additional info */}
-            <div className="md:col-span-2 space-y-6">
-              <Card className="bg-slate-800/50 border-slate-700/50">
+            <div className="md:col-span-2">
+              <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Bio</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {profile.bio ? (
-                    <p className="text-slate-300">{profile.bio}</p>
+                    <p>{profile.bio}</p>
                   ) : (
-                    <p className="text-slate-400 italic">No bio available</p>
+                    <p className="text-muted-foreground italic">No bio available</p>
                   )}
                 </CardContent>
               </Card>

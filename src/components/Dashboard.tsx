@@ -1,46 +1,48 @@
 import React, { useEffect, useState } from 'react';
 import { CaseCard } from './cases/CaseCard';
-import axios from 'axios';
-
-interface PolicyCase {
-  id: string;
-  title: string;
-  category: string;
-  summary: string;
-  facility: {
-    FAC_NAME: string;
-    FAC_CITY: string;
-    FAC_STATE: string;
-  };
-  status: string;
-  startDate: string;
-  endDate: string;
-  impact: boolean;
-  objectives: string;
-  aiAnalysis: string;
-}
+import { useCasesList, PolicyCase, hardcodedCases } from '@/services/caseService';
 
 export function Dashboard() {
   const [cases, setCases] = useState<PolicyCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use the React Query hook for optimized data fetching
+  const { data: queryCases, isLoading: queryLoading, error: queryError } = useCasesList();
 
   useEffect(() => {
-    async function loadCases() {
-      try {
-        setLoading(true);
-        const response = await axios.get('http://localhost:3000/api/cases');
-        setCases(response.data);
-      } catch (err) {
-        setError('Failed to load policy cases. Please try again later.');
-        console.error('Error loading cases:', err);
-      } finally {
-        setLoading(false);
+    try {
+      setLoading(true);
+      
+      // First check if we have data from React Query
+      if (queryCases && Array.isArray(queryCases) && queryCases.length > 0) {
+        console.log('Using React Query data for cases');
+        setCases(queryCases);
+      } else {
+        // Use hardcoded cases directly
+        console.log('Using hardcoded cases for dashboard');
+        setCases(hardcodedCases);
       }
+    } catch (err) {
+      console.error('Error loading cases:', err);
+      // Always fall back to hardcoded cases
+      setCases(hardcodedCases);
+    } finally {
+      setLoading(false);
     }
+  }, [queryCases]);
 
-    loadCases();
-  }, []);
+  // Handle React Query loading state
+  useEffect(() => {
+    if (queryLoading) {
+      setLoading(true);
+    } else if (queryError) {
+      console.error('Error in React Query fetch:', queryError);
+      // If there's an error with React Query, use hardcoded cases
+      setCases(hardcodedCases);
+      setLoading(false);
+    }
+  }, [queryLoading, queryError]);
 
   return (
     <div className="p-6 space-y-6">

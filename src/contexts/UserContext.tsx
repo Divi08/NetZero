@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { doc, getDoc, updateDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
@@ -20,28 +20,20 @@ export interface UserProfile {
   isOnline: boolean;
 }
 
-// Context interface
-interface UserContextProps {
+// Define context type
+interface UserContextType {
   user: UserProfile | null;
   isLoading: boolean;
   error: string | null;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
+  registerUser: (email: string, password: string) => Promise<void>;
+  updateUserStatus: (isOnline: boolean) => Promise<void>;
   refreshUserProfile: () => Promise<void>;
 }
 
-// Create the context with a default value
-const UserContext = createContext<UserContextProps>({
-  user: null,
-  isLoading: true,
-  error: null,
-  logout: async () => {},
-  updateUserProfile: async () => {},
-  refreshUserProfile: async () => {},
-});
-
-// Hook to use the user context
-export const useUser = () => useContext(UserContext);
+// Create the context
+const UserContext = createContext<UserContextType | undefined>(undefined);
 
 // Provider component
 export const UserProvider = ({ children }: { children: ReactNode }) => {
@@ -62,7 +54,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userDoc = await getDoc(doc(db, 'users', uid));
       if (userDoc.exists()) {
-        return userDoc.data() as UserProfile;
+        const userData = userDoc.data() as UserProfile;
+        // Ensure dates are properly converted
+        if (userData.createdAt) {
+          userData.createdAt = convertTimestampToDate(userData.createdAt);
+        }
+        if (userData.lastActive) {
+          userData.lastActive = convertTimestampToDate(userData.lastActive);
+        }
+        return userData;
       }
       return null;
     } catch (error) {
@@ -73,7 +73,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Ensure user profile exists
-  const ensureUserProfile = async (authUser: any) => {
+  const ensureUserProfile = async (authUser: User) => {
     if (!authUser) return null;
     
     try {
@@ -116,122 +116,141 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Listen for auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
-      setIsLoading(true);
-      try {
-        if (authUser) {
-          // User is signed in - First try to get profile, then ensure it exists if needed
-          let userProfile = await fetchUserProfile(authUser.uid);
-          
-          // If profile doesn't exist or had issues, try to create it
-          if (!userProfile) {
-            userProfile = await ensureUserProfile(authUser);
-          }
-          
-          if (userProfile) {
-            // Convert timestamps
-            const createdAt = convertTimestampToDate(userProfile.createdAt);
-            const lastActive = convertTimestampToDate(userProfile.lastActive);
-            
-            setUser({
-              ...userProfile,
-              createdAt,
-              lastActive
-            });
-            
-            setError(null);
-          } else {
-            console.error('Could not find or create user profile');
-            setError('User profile not found and could not be created');
-            setUser(null);
-          }
-        } else {
-          // User is signed out
-          setUser(null);
-          setError(null);
-        }
-      } catch (error) {
-        console.error('Auth state change error:', error);
-        setError('Authentication error');
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, []);
-
-  // Sign out function
-  const logout = async () => {
-    try {
-      if (auth.currentUser) {
-        // Update online status in Firestore
-        await updateDoc(doc(db, 'users', auth.currentUser.uid), {
-          lastActive: serverTimestamp(),
-          isOnline: false
-        });
-      }
-      await signOut(auth);
-    } catch (error) {
-      console.error('Error signing out:', error);
-      setError('Failed to sign out');
-    }
-  };
-
-  // Update user profile
-  const updateUserProfile = async (data: Partial<UserProfile>) => {
-    if (!user?.uid) return;
-    
-    try {
-      await updateDoc(doc(db, 'users', user.uid), {
-        ...data,
-        lastActive: serverTimestamp()
-      });
-      
-      // Refresh user data
-      await refreshUserProfile();
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setError('Failed to update profile');
-    }
-  };
-
-  // Refresh user profile
+  // Method to refresh the user profile
   const refreshUserProfile = async () => {
     if (!auth.currentUser) return;
     
     try {
-      const userProfile = await fetchUserProfile(auth.currentUser.uid);
-      if (userProfile) {
-        // Convert timestamps
-        const createdAt = convertTimestampToDate(userProfile.createdAt);
-        const lastActive = convertTimestampToDate(userProfile.lastActive);
-        
-        setUser({
-          ...userProfile,
-          createdAt,
-          lastActive
-        });
+      setIsLoading(true);
+      const freshProfile = await fetchUserProfile(auth.currentUser.uid);
+      if (freshProfile) {
+        setUser(freshProfile);
       }
     } catch (error) {
-      console.error('Error refreshing profile:', error);
-      setError('Failed to refresh profile');
+      console.error('Error refreshing user profile:', error);
+      setError('Failed to refresh user profile');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Context value
-  const value = {
-    user,
-    isLoading,
-    error,
-    logout,
-    updateUserProfile,
-    refreshUserProfile
+  // Auth state change listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        if (authUser) {
+          // Update the user's lastActive timestamp
+          await updateDoc(doc(db, 'users', authUser.uid), {
+            lastActive: serverTimestamp(),
+            isOnline: true
+          });
+          
+          // Get or create user profile
+          const userProfile = await ensureUserProfile(authUser);
+          setUser(userProfile);
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        console.error('Auth state change error:', err);
+        setError('Authentication error');
+      } finally {
+        setIsLoading(false);
+      }
+    });
+    
+    // Set up beforeunload handler to update online status
+    const handleBeforeUnload = async () => {
+      if (auth.currentUser) {
+        try {
+          await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+            isOnline: false,
+            lastActive: serverTimestamp()
+          });
+        } catch (err) {
+          console.error('Error updating offline status:', err);
+        }
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      unsubscribe();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  // Method to update user online status
+  const updateUserStatus = async (isOnline: boolean) => {
+    if (!auth.currentUser) return;
+    
+    try {
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+        isOnline,
+        lastActive: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error updating user status:', error);
+    }
   };
 
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+  // Sign out the user
+  const logout = async () => {
+    try {
+      // Set the user as offline before signing out
+      if (auth.currentUser) {
+        await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+          isOnline: false,
+          lastActive: serverTimestamp()
+        });
+      }
+      
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error during logout:', error);
+      setError('Logout failed');
+    }
+  };
+
+  // Placeholder methods for login and registration
+  // These would be implemented with Firebase Auth in a real app
+  const login = async (email: string, password: string) => {
+    // Implementation would use firebase/auth signInWithEmailAndPassword
+    setError('Login not implemented in this demo');
+  };
+
+  const registerUser = async (email: string, password: string) => {
+    // Implementation would use firebase/auth createUserWithEmailAndPassword
+    setError('Registration not implemented in this demo');
+  };
+
+  return (
+    <UserContext.Provider
+      value={{
+        user,
+        isLoading,
+        error,
+        login,
+        logout,
+        registerUser,
+        updateUserStatus,
+        refreshUserProfile
+      }}
+    >
+      {children}
+    </UserContext.Provider>
+  );
+};
+
+// Custom hook to use the user context
+export const useUser = () => {
+  const context = useContext(UserContext);
+  if (context === undefined) {
+    throw new Error('useUser must be used within a UserProvider');
+  }
+  return context;
 }; 

@@ -2,25 +2,80 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authenticated users to read other user profiles
+    // User profiles - any authenticated user can read any profile
+    // but can only update their own profile
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false; // Prevent profile deletion
+      
+      // Allow users to manage their own history
+      match /history/{historyId} {
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+      }
     }
     
-    // Allow authenticated users to read and write to their chats
+    // Chats - users can create chats if they are a participant
+    // and can read or write messages in chats they participate in
     match /chats/{chatId} {
-      allow read: if request.auth != null && resource.data.participants[request.auth.uid] == true;
-      allow create: if request.auth != null && request.resource.data.participants[request.auth.uid] == true;
-      allow update: if request.auth != null && resource.data.participants[request.auth.uid] == true;
+      allow create: if request.auth != null && 
+                     request.resource.data.participants[request.auth.uid] == true;
+      allow read, update: if request.auth != null && 
+                           resource.data.participants[request.auth.uid] == true;
       
-      // Allow messages in chats
+      // Chat messages
       match /messages/{messageId} {
-        allow read: if request.auth != null && 
-                    get(/databases/$(database)/documents/chats/$(chatId)).data.participants[request.auth.uid] == true;
-        allow create: if request.auth != null && 
-                      get(/databases/$(database)/documents/chats/$(chatId)).data.participants[request.auth.uid] == true;
+        allow read, write: if request.auth != null && 
+                            get(/databases/$(database)/documents/chats/$(chatId)).data.participants[request.auth.uid] == true;
       }
+    }
+    
+    // Community chat for cases - anyone authenticated can participate
+    match /case_community_chats/{caseId} {
+      allow read: if request.auth != null;
+      
+      match /messages/{messageId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && 
+                             (resource.data.userId == request.auth.uid || 
+                              resource.data.userId == 'zero-bot');
+      }
+    }
+    
+    // Friend requests - users can create requests, read requests sent to them,
+    // and manage their own requests
+    match /friendRequests/{requestId} {
+      allow create: if request.auth != null && 
+                     request.resource.data.senderId == request.auth.uid;
+      allow read: if request.auth != null && 
+                   (resource.data.senderId == request.auth.uid || 
+                    resource.data.receiverId == request.auth.uid);
+      allow update: if request.auth != null && 
+                     (resource.data.receiverId == request.auth.uid ||
+                      resource.data.senderId == request.auth.uid);
+      allow delete: if request.auth != null && 
+                     (resource.data.senderId == request.auth.uid || 
+                      resource.data.receiverId == request.auth.uid);
+    }
+    
+    // Friends collection - users can manage their own friends
+    match /friends/{friendId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null && 
+                           resource.data.userId == request.auth.uid;
+    }
+    
+    // Case mock data - anyone can read, but only authenticated users can write
+    match /case_mock_data/{caseId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Allow read access to policy cases
+    match /cases/{caseId} {
+      allow read: if true;
     }
   }
 } 
