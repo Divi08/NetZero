@@ -221,14 +221,376 @@ export function CaseDetail() {
         </TabsList>
 
         <TabsContent value="analysis" className="mt-0">
-          <div className="border rounded-lg p-6 bg-card">
-            <h2 className="text-xl font-semibold mb-4">Case Analysis</h2>
-            <div className="prose prose-invert max-w-none">
-              {caseData.aiAnalysis ? (
-                <p className="whitespace-pre-line">{caseData.aiAnalysis}</p>
-              ) : (
-                <p>No AI analysis available for this case.</p>
-              )}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left column - Summary and KPIs */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Key metrics card */}
+              <div className="border rounded-lg p-6 bg-card">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <span className="bg-primary/20 p-1.5 rounded-md mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83" />
+                    </svg>
+                  </span>
+                  Key Metrics
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="border border-border/40 rounded-lg p-3 bg-background/50">
+                    <div className="text-sm text-muted-foreground">Regulation Type</div>
+                    <div className="text-lg font-medium mt-1">{caseData.category || 'General'}</div>
+                  </div>
+                  <div className="border border-border/40 rounded-lg p-3 bg-background/50">
+                    <div className="text-sm text-muted-foreground">Status</div>
+                    <div className={`text-lg font-medium mt-1 ${
+                      caseData.status === 'In force' ? 'text-green-400' : 
+                      caseData.status === 'Pending' ? 'text-yellow-400' : 
+                      caseData.status === 'Ended' ? 'text-red-400' : 'text-blue-400'
+                    }`}>{caseData.status}</div>
+                  </div>
+                  <div className="border border-border/40 rounded-lg p-3 bg-background/50">
+                    <div className="text-sm text-muted-foreground">Start Date</div>
+                    <div className="text-lg font-medium mt-1">{caseData.startDate ? new Date(caseData.startDate).toLocaleDateString() : 'N/A'}</div>
+                  </div>
+                  <div className="border border-border/40 rounded-lg p-3 bg-background/50">
+                    <div className="text-sm text-muted-foreground">Environmental Impact</div>
+                    <div className="text-lg font-medium mt-1 flex items-center">
+                      {caseData.impact ? (
+                        <><span className="text-green-400">Positive</span><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m5 15 7-7 7 7" /></svg></>
+                      ) : (
+                        <><span className="text-amber-400">Neutral</span><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 12h8" /></svg></>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Location card */}
+              <div className="border rounded-lg p-6 bg-card">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <span className="bg-primary/20 p-1.5 rounded-md mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                  </span>
+                  Location
+                </h3>
+                <div className="border border-border/40 rounded-lg p-4 bg-background/50">
+                  <div className="flex flex-col space-y-2">
+                    <div>
+                      <span className="text-sm text-muted-foreground">Facility:</span>
+                      <span className="ml-2 font-medium">{caseData.facility?.FAC_NAME || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-muted-foreground">City:</span>
+                      <span className="ml-2 font-medium">{caseData.facility?.FAC_CITY || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-muted-foreground">State/Province:</span>
+                      <span className="ml-2 font-medium">{caseData.facility?.FAC_STATE || 'N/A'}</span>
+                    </div>
+                    {caseData.facility?.REGISTRY_ID && (
+                      <div>
+                        <span className="text-sm text-muted-foreground">Registry ID:</span>
+                        <span className="ml-2 font-medium">{caseData.facility.REGISTRY_ID}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-4 h-[120px] bg-slate-800/50 rounded-md flex items-center justify-center">
+                    <span className="text-sm text-muted-foreground">Map view would be displayed here</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Time period visualization */}
+              <div className="border rounded-lg p-6 bg-card">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <span className="bg-primary/20 p-1.5 rounded-md mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 6v6l4 2" />
+                    </svg>
+                  </span>
+                  Timeline
+                </h3>
+                <div className="border border-border/40 rounded-lg p-4 bg-background/50">
+                  <div className="relative pt-1">
+                    <div className="flex mb-2 items-center justify-between">
+                      <div>
+                        <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full bg-blue-900 text-blue-300">
+                          Policy Lifecycle
+                        </span>
+                      </div>
+                      {caseData.endDate ? (
+                        <div className="text-right">
+                          <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full bg-red-900 text-red-300">
+                            Ended
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-right">
+                          <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full bg-green-900 text-green-300">
+                            Active
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-slate-700">
+                      <div style={{ width: "100%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary"></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <div>
+                        <span className="font-semibold block">Start</span>
+                        <span>{caseData.startDate ? new Date(caseData.startDate).toLocaleDateString() : 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="font-semibold block">Current</span>
+                        <span>{new Date().toLocaleDateString()}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-semibold block">End</span>
+                        <span>{caseData.endDate ? new Date(caseData.endDate).toLocaleDateString() : 'Ongoing'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Right column - Analysis content */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="border rounded-lg p-6 bg-card">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <span className="bg-primary/20 p-1.5 rounded-md mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                    </svg>
+                  </span>
+                  Expert Analysis
+                </h3>
+                <div className="prose prose-invert max-w-none">
+                  {caseData.aiAnalysis ? (
+                    <div className="whitespace-pre-line space-y-4">
+                      {caseData.aiAnalysis.split('\n\n').map((paragraph, idx) => (
+                        <p key={idx}>{paragraph}</p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>No AI analysis available for this case.</p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Policy objectives */}
+              <div className="border rounded-lg p-6 bg-card">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <span className="bg-primary/20 p-1.5 rounded-md mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" />
+                      <path d="M8.5 8.5v.01" />
+                      <path d="M16 15.5v.01" />
+                      <path d="M12 12v.01" />
+                      <path d="M11 17v.01" />
+                      <path d="M7 14v.01" />
+                    </svg>
+                  </span>
+                  Policy Objectives
+                </h3>
+                <div className="border border-border/40 rounded-lg p-4 bg-background/50">
+                  <div className="flex items-center mb-4">
+                    <div className={`w-3 h-3 rounded-full mr-2 ${
+                      caseData.objectives === 'Mitigation' ? 'bg-blue-400' :
+                      caseData.objectives === 'Prevention' ? 'bg-green-400' :
+                      caseData.objectives === 'Adaptation' ? 'bg-purple-400' : 'bg-amber-400'
+                    }`}></div>
+                    <span className="font-medium">{caseData.objectives || 'General Objectives'}</span>
+                  </div>
+                  <div className="space-y-3">
+                    {caseData.objectives === 'Mitigation' && (
+                      <>
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="m22 12-4-4v3H3v2h15v3l4-4z" />
+                          </svg>
+                          <span>Reduce greenhouse gas emissions</span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="m22 12-4-4v3H3v2h15v3l4-4z" />
+                          </svg>
+                          <span>Promote clean energy alternatives</span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="m22 12-4-4v3H3v2h15v3l4-4z" />
+                          </svg>
+                          <span>Establish carbon tracking mechanisms</span>
+                        </div>
+                      </>
+                    )}
+                    {caseData.objectives === 'Prevention' && (
+                      <>
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="m22 12-4-4v3H3v2h15v3l4-4z" />
+                          </svg>
+                          <span>Prevent environmental contamination</span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="m22 12-4-4v3H3v2h15v3l4-4z" />
+                          </svg>
+                          <span>Establish safety protocols</span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="m22 12-4-4v3H3v2h15v3l4-4z" />
+                          </svg>
+                          <span>Protect ecosystems and biodiversity</span>
+                        </div>
+                      </>
+                    )}
+                    {!['Mitigation', 'Prevention'].includes(caseData.objectives || '') && (
+                      <>
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="m22 12-4-4v3H3v2h15v3l4-4z" />
+                          </svg>
+                          <span>Address climate change impacts</span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="m22 12-4-4v3H3v2h15v3l4-4z" />
+                          </svg>
+                          <span>Promote sustainable practices</span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="m22 12-4-4v3H3v2h15v3l4-4z" />
+                          </svg>
+                          <span>Support environmental conservation</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Implementation Challenges */}
+              <div className="border rounded-lg p-6 bg-card">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <span className="bg-primary/20 p-1.5 rounded-md mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                      <line x1="12" y1="2" x2="12" y2="12" />
+                    </svg>
+                  </span>
+                  Implementation Challenges
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-orange-500/20 bg-orange-950/10 rounded-lg p-4">
+                    <h4 className="font-medium text-orange-400 mb-2">Economic Impact</h4>
+                    <p className="text-sm">Potential costs for businesses adapting to new regulations and competitive implications in global markets.</p>
+                  </div>
+                  <div className="border border-purple-500/20 bg-purple-950/10 rounded-lg p-4">
+                    <h4 className="font-medium text-purple-400 mb-2">Technical Feasibility</h4>
+                    <p className="text-sm">Challenges in implementation due to technological limitations or measurement difficulties.</p>
+                  </div>
+                  <div className="border border-blue-500/20 bg-blue-950/10 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-400 mb-2">Compliance Verification</h4>
+                    <p className="text-sm">Methods for monitoring adherence to policy requirements and ensuring accurate reporting.</p>
+                  </div>
+                  <div className="border border-green-500/20 bg-green-950/10 rounded-lg p-4">
+                    <h4 className="font-medium text-green-400 mb-2">Stakeholder Support</h4>
+                    <p className="text-sm">Varying levels of acceptance from industry, public, and other governmental entities.</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Related Resources */}
+              <div className="border rounded-lg p-6 bg-card">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <span className="bg-primary/20 p-1.5 rounded-md mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                      <path d="M13 2v7h7" />
+                    </svg>
+                  </span>
+                  Related Resources
+                </h3>
+                <div className="space-y-3">
+                  <div className="border border-border/40 hover:border-primary/50 transition-colors rounded-lg p-4 bg-background/50 cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <path d="M14 2v6h6" />
+                          <path d="M16 13H8" />
+                          <path d="M16 17H8" />
+                          <path d="M10 9H8" />
+                        </svg>
+                        <div>
+                          <h4 className="font-medium">Official Documentation</h4>
+                          <p className="text-sm text-muted-foreground">Full text of the policy with amendments</p>
+                        </div>
+                      </div>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="border border-border/40 hover:border-primary/50 transition-colors rounded-lg p-4 bg-background/50 cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <polyline points="21 15 16 10 5 21" />
+                        </svg>
+                        <div>
+                          <h4 className="font-medium">Impact Assessment</h4>
+                          <p className="text-sm text-muted-foreground">Environmental impact study results</p>
+                        </div>
+                      </div>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="border border-border/40 hover:border-primary/50 transition-colors rounded-lg p-4 bg-background/50 cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                        <div>
+                          <h4 className="font-medium">Compliance Support</h4>
+                          <p className="text-sm text-muted-foreground">Assistance for affected entities</p>
+                        </div>
+                      </div>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <Button variant="outline" size="sm" className="text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    Find more resources
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </TabsContent>

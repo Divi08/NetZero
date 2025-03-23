@@ -123,4 +123,40 @@
     @apply inline-block h-6 w-6 animate-spin rounded-full border-[3px] border-current border-t-transparent;
   }
 }
+/* Globe animation */
+@keyframes rotate {
+  from {
+    transform: rotate3d(0, 1, 0, 0deg);
+  }
+  to {
+    transform: rotate3d(0, 1, 0, 360deg);
+  }
+}
+
+.globe-animate {
+  animation: rotate 2s ease-in-out;
+}
+
+/* Prose styles for the analysis content */
+.prose h2 {
+  color: hsl(var(--primary));
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose h3 {
+  color: hsl(var(--primary));
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+}
+
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
 

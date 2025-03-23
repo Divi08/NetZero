@@ -23,7 +23,6 @@ import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import Chat from "./pages/Chat";
 import Badges from "./pages/Badges";
-import PersonalizedAnalysis from "./pages/PersonalizedAnalysis";
 
 const queryClient = new QueryClient();
 
@@ -72,7 +71,6 @@ const AppRoutes = () => {
       <Route path="/sign-up" element={user ? <Navigate to="/dashboard" /> : <SignUp />} />
       
       {/* Protected routes */}
-      <Route path="/analysis" element={<ProtectedRoute><PersonalizedAnalysis /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/cases" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/case/:id" element={<ProtectedRoute><CaseDetail /></ProtectedRoute>} />
@@ -81,12 +79,9 @@ const AppRoutes = () => {
       <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
       <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
       <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
-      
-      {/* Profile routes - specific routes first */}
-      <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
-      <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      
+      <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
       <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
       <Route path="/chat/:chatId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
       <Route path="/badges" element={<ProtectedRoute><Badges /></ProtectedRoute>} />
@@ -113,4 +108,6 @@ const App = () => {
   );
 };
 
-export default App; 
+export default App;
+
+

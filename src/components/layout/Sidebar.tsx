@@ -12,7 +12,8 @@ import {
   Users,
   UserCircle,
   MessageSquare,
-  Award
+  Award,
+  BarChart2
 } from 'lucide-react';
 
 // Type definition for menu items
@@ -59,14 +60,19 @@ const menuItems: MenuItemType[] = [
     label: 'News',
     path: '/news',
     icon: Newspaper
-  }
+  },
+  {
+    icon: BarChart2,
+    label: "Analysis",
+    path: "/analysis",
+  },
 ];
 
 // Bottom menu items
 const bottomItems: MenuItemType[] = [
   {
     label: 'Profile',
-    path: '/profile/edit',
+    path: '/profile',
     icon: UserCircle
   },
   {
