@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -8,15 +7,19 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { Shield, AlertTriangle, Check, ArrowRight, FileText, Briefcase, Search } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  username: z.string().min(3, "Username must be at least 3 characters")
+    .max(20, "Username cannot exceed 20 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
   email: z.string().email("Please enter a valid email address"),
   education: z.string().min(2, "Please enter your educational background"),
   password: z.string().min(8, "Password must be at least 8 characters"),
@@ -33,6 +36,7 @@ const SignUp = () => {
     defaultValues: {
       firstName: "",
       lastName: "",
+      username: "",
       email: "",
       education: "",
       password: "",
@@ -42,18 +46,33 @@ const SignUp = () => {
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      // Create the user with Firebase
+      // Create the user with Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const user = userCredential.user;
       
-      // Update the user profile with additional information
-      await updateProfile(userCredential.user, {
+      // Update the user profile with displayName
+      await updateProfile(user, {
         displayName: `${data.firstName} ${data.lastName}`,
       });
       
-      // Store additional user data if needed
-      // In a real app, you might store this in Firestore or another database
+      // Store user data in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username: data.username.toLowerCase(), // Store lowercase for case-insensitive searches
+        usernameDisplay: data.username, // Store original for display
+        email: data.email,
+        education: data.education,
+        photoURL: null,
+        bio: "",
+        createdAt: new Date(),
+        lastActive: new Date(),
+        friends: [],
+        isOnline: true
+      });
       
-      console.log("User created successfully:", userCredential.user);
+      console.log("User created successfully:", user);
       toast.success("Account created successfully!");
       navigate("/dashboard");
     } catch (error: any) {
@@ -162,6 +181,20 @@ const SignUp = () => {
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-200">Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="johndoe" className="bg-slate-700/50 border-slate-600 text-white" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}

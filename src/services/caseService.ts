@@ -21,11 +21,26 @@ export interface PolicyCase {
   aiAnalysis?: string | null;
 }
 
+const ports = [8080, 8081, 8082, 8083];
+
+async function tryPorts(endpoint: string): Promise<any> {
+  for (const port of ports) {
+    try {
+      const response = await axios.get(`http://localhost:${port}${endpoint}`);
+      return response.data;
+    } catch (error) {
+      if (port === ports[ports.length - 1]) {
+        throw new Error('Failed to connect to any available port');
+      }
+      continue;
+    }
+  }
+}
+
 // Fetch all cases
 export async function fetchCases(): Promise<PolicyCase[]> {
   try {
-    const response = await axios.get('http://localhost:8083/api/cases');
-    return response.data;
+    return await tryPorts('/api/cases');
   } catch (error) {
     throw new Error('Failed to fetch cases');
   }
@@ -34,8 +49,7 @@ export async function fetchCases(): Promise<PolicyCase[]> {
 // Fetch a single case with AI analysis
 export async function fetchCaseById(id: string): Promise<PolicyCase> {
   try {
-    const response = await axios.get(`http://localhost:8083/api/cases/${id}`);
-    return response.data;
+    return await tryPorts(`/api/cases/${id}`);
   } catch (error) {
     throw new Error('Failed to fetch case details');
   }
@@ -44,8 +58,18 @@ export async function fetchCaseById(id: string): Promise<PolicyCase> {
 // Generate AI analysis for a case
 export async function generateAIAnalysis(id: string): Promise<{ analysis: string }> {
   try {
-    const response = await axios.post(`http://localhost:8083/api/cases/${id}/analyze`);
-    return response.data;
+    for (const port of ports) {
+      try {
+        const response = await axios.post(`http://localhost:${port}/api/cases/${id}/analyze`);
+        return response.data;
+      } catch (error) {
+        if (port === ports[ports.length - 1]) {
+          throw error;
+        }
+        continue;
+      }
+    }
+    throw new Error('No available ports');
   } catch (error) {
     throw new Error('Failed to generate analysis');
   }
