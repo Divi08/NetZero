@@ -1,10 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { fetchECHOFacilities } from '../services/echoService';
-import { generateCaseFromFacility, GeneratedCase } from '../services/geminiService';
 import { CaseCard } from './cases/CaseCard';
+import axios from 'axios';
 
-export default function Dashboard() {
-  const [cases, setCases] = useState<GeneratedCase[]>([]);
+interface PolicyCase {
+  id: string;
+  title: string;
+  category: string;
+  summary: string;
+  facility: {
+    FAC_NAME: string;
+    FAC_CITY: string;
+    FAC_STATE: string;
+  };
+  status: string;
+  startDate: string;
+  endDate: string;
+  impact: boolean;
+  objectives: string;
+  aiAnalysis: string;
+}
+
+export function Dashboard() {
+  const [cases, setCases] = useState<PolicyCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,22 +29,11 @@ export default function Dashboard() {
     async function loadCases() {
       try {
         setLoading(true);
-        setError(null);
-        
-        const facilities = await fetchECHOFacilities();
-        if (!facilities.length) {
-          setError('No facilities found');
-          return;
-        }
-
-        const generatedCases = await Promise.all(
-          facilities.map(facility => generateCaseFromFacility(facility))
-        );
-
-        setCases(generatedCases.filter(c => c !== null));
+        const response = await axios.get('http://localhost:3000/api/cases');
+        setCases(response.data);
       } catch (err) {
+        setError('Failed to load policy cases. Please try again later.');
         console.error('Error loading cases:', err);
-        setError('Failed to load cases. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -36,33 +42,40 @@ export default function Dashboard() {
     loadCases();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500 text-center">
-          <h2 className="text-xl font-bold mb-2">Error</h2>
-          <p>{error}</p>
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-100">Environmental Cases</h1>
+          <p className="text-slate-400">Active environmental policy cases with AI-powered analysis</p>
         </div>
       </div>
-    );
-  }
+      
+      {loading && (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        </div>
+      )}
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Environmental Cases Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cases.map(caseData => (
-          <CaseCard key={caseData.id} caseData={caseData} />
-        ))}
-      </div>
+      {error && (
+        <div className="text-red-500 text-center py-4">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && cases.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-slate-400">No policy cases found</p>
+        </div>
+      )}
+
+      {!loading && !error && cases.length > 0 && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {cases.map((caseData) => (
+            <CaseCard key={caseData.id} caseData={caseData} />
+          ))}
+        </div>
+      )}
     </div>
   );
 } 
