@@ -1,0 +1,128 @@
+
+ /* Globe animation styles */
+ @keyframes rotate {
+   from {
+     transform: rotate3d(0, 1, 0, 0deg);
+   }
+   to {
+     transform: rotate3d(0, 1, 0, 360deg);
+   }
+ }
+ 
+ @keyframes pulse {
+   0% {
+     transform: scale(1);
+     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3);
+   }
+   70% {
+     transform: scale(1.05);
+     box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+   }
+   100% {
+     transform: scale(1);
+     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+   }
+ }
+ 
+ .globe-animate {
+   animation: rotate 2s cubic-bezier(0.4, 0, 0.2, 1);
+ }
+ 
+ .globe-pulse {
+   animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+ }
+ 
+ /* Grid pattern for globe */
+ .bg-grid-pattern {
+   background-image: 
+     linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
+     linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
+   background-size: 10px 10px;
+ }
+ 
+ /* Analysis highlight colors */
+ .climate-data-temp {
+   color: rgb(239, 68, 68);
+ }
+ 
+ .climate-data-water {
+   color: rgb(59, 130, 246);
+ }
+ 
+ .climate-data-bio {
+   color: rgb(34, 197, 94);
+ }
+ 
+ .climate-data-air {
+   color: rgb(168, 85, 247);
+ }
+ 
+ .climate-data-econ {
+   color: rgb(249, 115, 22);
+ }
+ 
+ /* Tooltip styles */
+ .climate-tooltip {
+   position: relative;
+   display: inline-block;
+   border-bottom: 1px dotted #ccc;
+ }
+ 
+ .climate-tooltip .climate-tooltip-text {
+   visibility: hidden;
+   width: 200px;
+   background-color: rgba(15, 23, 42, 0.9);
+   color: #fff;
+   text-align: center;
+   border-radius: 6px;
+   padding: 5px;
+   position: absolute;
+   z-index: 1;
+   bottom: 125%;
+   left: 50%;
+   margin-left: -100px;
+   opacity: 0;
+   transition: opacity 0.3s;
+   font-size: 0.8rem;
+ }
+ 
+ .climate-tooltip:hover .climate-tooltip-text {
+   visibility: visible;
+   opacity: 1;
+ }
+ 
+ /* Fade-in animation for analysis results */
+ @keyframes fadeIn {
+   from {
+     opacity: 0;
+     transform: translateY(10px);
+   }
+   to {
+     opacity: 1;
+     transform: translateY(0);
+   }
+ }
+ 
+ .analysis-result-section {
+   animation: fadeIn 0.5s ease-out forwards;
+ }
+ 
+ .analysis-result-section:nth-child(2) {
+   animation-delay: 0.1s;
+ }
+ 
+ .analysis-result-section:nth-child(3) {
+   animation-delay: 0.2s;
+ }
+ 
+ .analysis-result-section:nth-child(4) {
+   animation-delay: 0.3s;
+ }
+ 
+ .analysis-result-section:nth-child(5) {
+   animation-delay: 0.4s;
+ }
+ 
+ .analysis-result-section:nth-child(6) {
+   animation-delay: 0.5s;
+ } 

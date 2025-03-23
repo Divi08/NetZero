@@ -1,0 +1,721 @@
+/* Globe animation styles */
+@keyframes rotate {
+    from {
+      transform: rotate3d(1, 1, 1, 0deg);
+    }
+    to {
+      transform: rotate3d(1, 1, 1, 360deg);
+    }
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+  }
+  
+  .globe-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    perspective: 800px;
+    overflow: hidden;
+  }
+  
+  .globe {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 70% 70%, #5bbdff 0%, #097bed 50%, #084c94 100%);
+    position: relative;
+    box-shadow: 0 0 20px rgba(9, 123, 237, 0.4);
+    transform-style: preserve-3d;
+    animation: rotate 60s linear infinite, pulse 5s ease-in-out infinite;
+  }
+  
+  .globe::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background-image: 
+      linear-gradient(0deg, transparent 0%, rgba(255, 255, 255, 0.2) 100%),
+      radial-gradient(circle at 40% 40%, rgba(22, 181, 64, 0.7) 0%, transparent 40%),
+      radial-gradient(circle at 80% 30%, rgba(255, 199, 39, 0.5) 0%, transparent 30%);
+    opacity: 0.8;
+  }
+  
+  .globe::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    border-radius: 50%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.03) 10px,
+      rgba(255, 255, 255, 0.03) 20px
+    );
+    opacity: 0.3;
+    pointer-events: none;
+  }
+  
+  .pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: rgba(9, 123, 237, 0.1);
+    box-shadow: 0 0 30px rgba(9, 123, 237, 0.3);
+    animation: pulse 4s ease-in-out infinite;
+  }
+  
+  /* Grid pattern for globe */
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: 10px 10px;
+  }
+  
+  /* Analysis highlight colors */
+  .climate-data-temp {
+    color: rgb(239, 68, 68);
+  }
+  
+  .climate-data-water {
+    color: rgb(59, 130, 246);
+  }
+  
+  .climate-data-bio {
+    color: rgb(34, 197, 94);
+  }
+  
+  .climate-data-air {
+    color: rgb(168, 85, 247);
+  }
+  
+  .climate-data-econ {
+    color: rgb(249, 115, 22);
+  }
+  
+  /* Tooltip styles */
+  .climate-tooltip {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 6px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    max-width: 200px;
+    font-size: 0.875rem;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  
+  .climate-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  /* Fade-in animation for analysis results */
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .analysis-result-section {
+    animation: fadeIn 0.6s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: transform 0.3s ease-out, box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  
+  .analysis-result-section:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+  
+  /* Apply staggered animation delay to each section */
+  .analysis-result-section:nth-child(1) { animation-delay: 0s; }
+  .analysis-result-section:nth-child(2) { animation-delay: 0.1s; }
+  .analysis-result-section:nth-child(3) { animation-delay: 0.2s; }
+  .analysis-result-section:nth-child(4) { animation-delay: 0.3s; }
+  .analysis-result-section:nth-child(5) { animation-delay: 0.4s; }
+  .analysis-result-section:nth-child(6) { animation-delay: 0.5s; }
+  .analysis-result-section:nth-child(7) { animation-delay: 0.6s; }
+  
+  /* Section color definitions */
+  .temperature-section { border-color: #ef4444; }
+  .water-section { border-color: #0ea5e9; }
+  .biodiversity-section { border-color: #22c55e; }
+  .air-section { border-color: #a855f7; }
+  .economic-section { border-color: #f97316; }
+  
+  /* Enhanced visual elements */
+  .section-highlight {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .section-highlight::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, currentColor, transparent);
+    opacity: 0.3;
+  }
+  
+  /* Add decorative topographical patterns to sections */
+  .bg-topo-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M54.627 0l.83.828-1.415 1.415L51.8 0h2.827zM5.373 0l-.83.828L5.96 2.243 8.2 0H5.374zM48.97 0l3.657 3.657-1.414 1.414L46.143 0h2.828zM11.03 0L7.372 3.657 8.787 5.07 13.857 0H11.03zm32.284 0L49.8 6.485 48.384 7.9l-7.9-7.9h2.83zM16.686 0L10.2 6.485 11.616 7.9l7.9-7.9h-2.83zm20.97 0l9.315 9.314-1.414 1.414L34.828 0h2.83zM22.344 0L13.03 9.314l1.414 1.414L25.172 0h-2.83zM32 0l12.142 12.142-1.414 1.414L30 .828 17.272 13.556l-1.414-1.414L28 0h4zM.284 0l28 28-1.414 1.414L0 2.544V0h.284zM0 5.373l25.456 25.455-1.414 1.415L0 8.2V5.374zm0 5.656l22.627 22.627-1.414 1.414L0 13.86v-2.83zm0 5.656l19.8 19.8-1.415 1.413L0 19.514v-2.83zm0 5.657l16.97 16.97-1.414 1.415L0 25.172v-2.83zM0 28l14.142 14.142-1.414 1.414L0 30.828V28zm0 5.657L11.314 44.97 9.9 46.386l-9.9-9.9v-2.828zm0 5.657L8.485 47.8 7.07 49.212 0 42.143v-2.83zm0 5.657l5.657 5.657-1.414 1.415L0 47.8v-2.83zm0 5.657l2.828 2.83-1.414 1.413L0 53.456v-2.83zM54.627 60L30 35.373 5.373 60H8.2L30 38.2 51.8 60h2.827zm-5.656 0L30 41.03 11.03 60h2.828L30 43.858 46.142 60h2.83zm-5.656 0L30 46.686 16.686 60h2.83L30 49.515 40.485 60h2.83zm-5.657 0L30 52.343 22.343 60h2.83L30 55.172 34.828 60h2.83zM32 60l-2-2-2 2h4zM59.716 0l-28 28 1.414 1.414L60 2.544V0h-.284zM60 5.373L34.544 30.828l1.414 1.415L60 8.2V5.374zm0 5.656L37.373 33.656l1.414 1.414L60 13.86v-2.83zm0 5.656l-19.8 19.8 1.415 1.413L60 19.514v-2.83zm0 5.657l-16.97 16.97 1.414 1.415L60 25.172v-2.83zM60 28L45.858 42.142l1.414 1.414L60 30.828V28zm0 5.657L48.686 44.97l1.415 1.415 9.9-9.9v-2.828zm0 5.657L51.515 47.8l1.414 1.413 7.07-7.07v-2.83zm0 5.657l-5.657 5.657 1.414 1.415L60 47.8v-2.83zm0 5.657l-2.828 2.83 1.414 1.413L60 53.456v-2.83zM39.9 16.385l1.414-1.414L30 3.658 18.686 14.97l1.415 1.415 9.9-9.9 9.9 9.9zm-2.83 2.828l1.415-1.414L30 9.313 21.515 17.8l1.414 1.413L30 11.8l7.07 7.414v-.002zm-2.827 2.83l1.414-1.416L30 14.97l-5.657 5.657 1.414 1.415L30 17.8l4.243 4.242zm-2.83 2.827l1.415-1.414L30 20.626l-2.828 2.83 1.414 1.414L30 23.456l1.414 1.414zM56.87 59.414L58.284 58 30 29.716 1.716 58l1.414 1.414L30 32.544l26.87 26.87z' fill='%2320202a' fill-opacity='0.07' fill-rule='evenodd'/%3E%3C/svg%3E");
+    background-size: 60px 60px;
+  }
+  
+  /* Add a subtle wave effect for water-related sections */
+  @keyframes wave {
+    0% { background-position: 0 0; }
+    100% { background-position: 100px 0; }
+  }
+  
+  .water-wave-bg {
+    position: relative;
+  }
+  
+  .water-wave-bg::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.2), transparent);
+    background-size: 100px 6px;
+    animation: wave 10s linear infinite;
+    opacity: 0.6;
+    border-radius: 0 0 6px 6px;
+  }
+  
+  /* Add subtle leaf pattern for biodiversity sections */
+  .leaf-pattern-bg {
+    position: relative;
+  }
+  
+  .leaf-pattern-bg::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2322c55e' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z'%3E%3C/path%3E%3Cpath d='M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: contain;
+    opacity: 0.15;
+    z-index: 0;
+    pointer-events: none;
+  }
+  
+  /* Add card hover effects */
+  .analysis-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .analysis-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Enhanced scrolling indicators for long sections */
+  .scroll-indicator::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.7), transparent);
+    border-radius: 0 0 8px 8px;
+    pointer-events: none;
+  }
+  
+  /* Enhanced bullet point styling for analysis data */
+  .data-bullet {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .data-bullet::before {
+    content: '•';
+    position: absolute;
+    left: 0.5rem;
+    color: #3b82f6;
+    font-weight: bold;
+  }
+  
+  /* Highlighted data values */
+  .data-value {
+    font-weight: 600;
+    color: #2563eb;
+    background: linear-gradient(to right, rgba(37, 99, 235, 0.1), transparent);
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+  }
+  
+  /* Data trend indicators */
+  .trend-up {
+    color: #ef4444;
+    position: relative;
+    padding-right: 1rem;
+  }
+  
+  .trend-up::after {
+    content: '↑';
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+  
+  .trend-down {
+    color: #22c55e;
+    position: relative;
+    padding-right: 1rem;
+  }
+  
+  .trend-down::after {
+    content: '↓';
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+  
+  /* Animated emphasis for important points */
+  @keyframes emphasis {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  .emphasis {
+    background: linear-gradient(270deg, rgba(59, 130, 246, 0.1), rgba(239, 68, 68, 0.1), rgba(59, 130, 246, 0.1));
+    background-size: 200% 200%;
+    animation: emphasis 3s ease infinite;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+  }
+  
+  /* Chart data visualization styling */
+  .chart-bar {
+    height: 1rem;
+    background: linear-gradient(to right, #3b82f6, #2563eb);
+    border-radius: 0.25rem;
+    margin: 0.5rem 0;
+    transition: width 1s ease-out;
+  }
+  
+  .chart-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+  
+  /* Section content styling */
+  .section-content {
+    position: relative;
+    padding-left: 1rem;
+    border-left: 1px dashed rgba(59, 130, 246, 0.3);
+    margin-left: 0.5rem;
+  }
+  
+  /* Analysis key points highlight */
+  .key-point {
+    border-left: 3px solid #3b82f6;
+    padding-left: 1rem;
+    background-color: rgba(59, 130, 246, 0.05);
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    border-radius: 0 0.25rem 0.25rem 0;
+  }
+  
+  /* Fix dark mode text contrast issues */
+  .dark .text-slate-700 {
+    color: #e2e8f0 !important; /* Ensure light text on dark backgrounds */
+  }
+  
+  .dark .text-slate-800 {
+    color: #f8fafc !important; /* Ensure light text on dark backgrounds */
+  }
+  
+  .dark .prose {
+    color: #e2e8f0 !important;
+  }
+  
+  /* Enhanced bullet styling for analysis */
+  .analysis-bullet {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+  }
+  
+  .analysis-bullet::before {
+    content: '•';
+    position: absolute;
+    left: 0.5rem;
+    color: #3b82f6;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+  
+  /* Add more spacing between each analysis bullet point */
+  .analysis-bullet + .analysis-bullet {
+    margin-top: 1.5rem;
+  }
+  
+  /* Add spacing to jot note bullet points */
+  .jot-note > * {
+    margin-bottom: 1rem;
+    display: block;
+  }
+  
+  /* Remove any block styling from data points inside jot notes */
+  .jot-note .data-point {
+    display: inline;
+    margin-bottom: 0;
+  }
+  
+  /* Enhanced card styling for dark mode */
+  .dark .analysis-card {
+    background-color: rgba(30, 41, 59, 0.8);
+    border-color: rgba(51, 65, 85, 0.5);
+  }
+  
+  /* Better contrast for section backgrounds in dark mode */
+  .dark .from-slate-900\/80,
+  .dark .to-slate-900\/60 {
+    background-color: rgba(15, 23, 42, 0.9);
+  }
+  
+  .dark .from-blue-900\/20,
+  .dark .from-red-900\/20,
+  .dark .from-green-900\/20,
+  .dark .from-purple-900\/20,
+  .dark .from-orange-900\/20,
+  .dark .from-emerald-900\/20,
+  .dark .from-cyan-900\/20 {
+    background-color: rgba(30, 41, 59, 0.8);
+  }
+  
+  /* Section styling */
+  .analysis-section {
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Keep the colored accents for different sections */
+  .temperature-section { border-left: 3px solid #ef4444; }
+  .water-section { border-left: 3px solid #0ea5e9; }
+  .biodiversity-section { border-left: 3px solid #22c55e; }
+  .air-section { border-left: 3px solid #a855f7; }
+  .economic-section { border-left: 3px solid #f97316; }
+  .action-section { border-left: 3px solid #10b981; }
+  .policy-section { border-left: 3px solid #06b6d4; }
+  
+  /* Enhanced section header styling */
+  .section-header {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(203, 213, 225, 0.5);
+  }
+  
+  .dark .section-header {
+    color: #f1f5f9;
+    border-bottom-color: rgba(71, 85, 105, 0.5);
+  }
+  
+  .section-header::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 1.5rem;
+    background: linear-gradient(to bottom, #3b82f6, #2563eb);
+    border-radius: 2px;
+  }
+  
+  /* Enhanced jot note styling */
+  .jot-notes-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .jot-note {
+    font-family: "Geist Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+  
+  .dark .jot-note {
+    color: #e2e8f0;
+  }
+  
+  .jot-note::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #6366f1;
+  }
+  
+  /* Data point styling */
+  .data-point {
+    font-weight: 700;
+    color: #2563eb;
+    background-color: rgba(37, 99, 235, 0.1);
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+    margin: 0 0.2rem;
+  }
+  
+  .dark .data-point {
+    color: #60a5fa;
+    background-color: rgba(96, 165, 250, 0.15);
+  }
+  
+  /* Impact terms styling */
+  .impact-term {
+    color: #7c3aed;
+    font-weight: 500;
+  }
+  
+  .dark .impact-term {
+    color: #a78bfa;
+  }
+  
+  /* Section header styling */
+  .analysis-section-header {
+    color: #1e293b; /* Slate-800 */
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0; /* Slate-200 */
+  }
+  
+  .dark .analysis-section-header {
+    color: #f1f5f9; /* Slate-100 */
+    border-bottom-color: #334155; /* Slate-700 */
+  }
+  
+  /* Add emphasis to analysis bullet points */
+  .bullet-highlight {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), transparent);
+    margin-left: -1rem;
+    padding-left: 1rem;
+    border-radius: 4px;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+  
+  .dark .bullet-highlight {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), transparent);
+  }
+  
+  /* Style for individual analysis sentences */
+  .analysis-sentence {
+    display: block;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    padding-left: 0.5rem;
+    position: relative;
+  }
+  
+  /* Add light blue background to analysis text blocks */
+  .ai-text-block {
+    background-color: rgba(186, 230, 253, 0.4); /* Light blue with transparency */
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    position: relative;
+    border-left: 3px solid rgba(59, 130, 246, 0.5);
+  }
+  
+  .dark .ai-text-block {
+    background-color: rgba(30, 58, 138, 0.15); /* Dark blue with transparency */
+    border-left: 3px solid rgba(59, 130, 246, 0.4);
+  }
+  
+  /* Earth globe styling */
+  .earth-globe {
+    background: radial-gradient(circle at 30% 30%, #1a4379 0%, #072642 80%);
+    position: relative;
+    box-shadow: 0 0 30px rgba(9, 123, 237, 0.5);
+    transform-style: preserve-3d;
+  }
+  
+  /* Earth surface with continents */
+  .earth-surface {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'%3E%3Cpath fill='%2395D0DF' opacity='0.35' d='M90,10 L120,10 L120,20 L90,20 Z M160,10 L220,10 L220,20 L160,20 Z M260,10 L320,10 L320,20 L260,20 Z M70,30 L100,30 L100,40 L70,40 Z M140,30 L240,30 L240,40 L140,40 Z M280,30 L340,30 L340,40 L280,40 Z M60,50 L80,50 L80,60 L60,60 Z M120,50 L260,50 L260,60 L120,60 Z M300,50 L360,50 L360,60 L300,60 Z M50,70 L90,70 L90,80 L50,80 Z M130,70 L280,70 L280,80 L130,80 Z M320,70 L370,70 L370,80 L320,80 Z M40,90 L100,90 L100,100 L40,100 Z M140,90 L300,90 L300,100 L140,100 Z M340,90 L380,90 L380,100 L340,100 Z M30,110 L100,110 L100,120 L30,120 Z M140,110 L300,110 L300,120 L140,120 Z M340,110 L380,110 L380,120 L340,120 Z M40,130 L110,130 L110,140, L40,140 Z M150,130 L280,130 L280,140 L150,140 Z M320,130 L370,130 L370,140 L320,140 Z M60,150 L120,150 L120,160 L60,160 Z M160,150 L260,150 L260,160 L160,160 Z M300,150 L350,150 L350,160 L300,160 Z M80,170 L140,170 L140,180 L80,180 Z M180,170 L240,170 L240,180 L180,180 Z M280,170 L330,170 L330,180 L280,180 Z'/%3E%3C/svg%3E");
+    background-size: cover;
+    opacity: 0.7;
+    transform-style: preserve-3d;
+  }
+  
+  .earth-globe::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
+    z-index: 2;
+    opacity: 0.3;
+  }
+  
+  .earth-globe::after {
+    content: '';
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
+    border-radius: 50%;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    opacity: 0.4;
+    z-index: 3;
+  }
+  
+  /* Globe animation */
+  .globe-animate {
+    animation: rotate 3s ease-out;
+  }
+  
+  .globe-pulse {
+    animation: pulse 4s ease-in-out infinite;
+  }
+  
+  /* Modify spacing for analysis text section for better readability */
+  .analysis-section {
+    background: rgba(186, 230, 253, 0.3);
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    border-left: 3px solid rgba(59, 130, 246, 0.5);
+    margin-bottom: 1.5rem;
+  }
+  
+  .dark .analysis-section {
+    background: rgba(30, 58, 138, 0.15);
+  }
+  
+  /* Improve section headers with emojis */
+  .section-header {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(203, 213, 225, 0.5);
+  }
+  
+  .dark .section-header {
+    color: #f1f5f9;
+    border-bottom-color: rgba(71, 85, 105, 0.5);
+  }
+  
+  /* Clean analysis content styling */
+  .analysis-content p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+    color: #1e293b;
+  }
+  
+  .dark .analysis-content p {
+    color: #e2e8f0;
+  }
+  
+  /* Clean section header styling */
+  .section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.5);
+  }
+  
+  .section-header h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+  }
+  
+  .dark .section-header h3 {
+    color: #f1f5f9;
+  }
+  
+  /* Add subtle section background */
+  .analysis-content {
+    background-color: rgba(248, 250, 252, 0.5);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.25rem;
+    border-left: 3px solid rgba(59, 130, 246, 0.5);
+  }
+  
+  .dark .analysis-content {
+    background-color: rgba(30, 41, 59, 0.15);
+  }
+  
+  /* Remove bullet styling */
+  .analysis-content ul {
+    list-style-type: none;
+    padding-left: 0;
+  } 
